@@ -11,9 +11,8 @@ export default defineConfig({
   integrations: [
     starlight({
       title: '我的站点',
-      // TODO: 把下面的 GitHub 链接换成你自己的仓库地址
       social: [
-        { icon: 'github', label: 'GitHub', href: 'https://github.com/你的用户名/my-site' },
+        { icon: 'github', label: 'GitHub', href: 'https://github.com/hujinnvshi/opengood-hub' },
       ],
       sidebar: [
         // Starlight v0.39+：autogenerate 不能直接带 label，要包在 { label, items: [...] } 里

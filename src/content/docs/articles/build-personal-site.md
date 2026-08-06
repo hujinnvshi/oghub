@@ -73,7 +73,7 @@ export default defineConfig({
 
 | 类型 | 主机记录 | 记录值 |
 |---|---|---|
-| CNAME | `github` | `你的用户名.github.io.`（结尾有点） |
+| CNAME | `github` | `hujinnvshi.github.io.`（结尾有点） |
 
 **4. GitHub Pages 后台** —— Source = `Deploy from a branch` → `gh-pages` / `(root)`；Custom domain 填域名；勾 Enforce HTTPS。
 

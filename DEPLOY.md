@@ -2,6 +2,8 @@
 
 本文档面向**首次上线**：把本地项目部署到 GitHub Pages 并绑定自定义域名 `github.opengood.cc`。日常更新见 [README.md](./README.md)。
 
+> 本项目对应仓库：`hujinnvshi/opengood-hub`（SSH：`git@github.com:hujinnvshi/opengood-hub.git`）
+
 ## 前置条件
 
 - GitHub 账号
@@ -22,24 +24,22 @@ GitHub Pages 服务 gh-pages 分支 ──▶ https://github.opengood.cc
 
 ## 一次性上线步骤
 
-### A. 在 GitHub 新建仓库
-- 新建普通仓库（建议名 `my-site`），**不要勾** Add README、**不要初始化**。
-- 复制 SSH 地址，如 `git@github.com:你的用户名/my-site.git`。
+### A. GitHub 仓库（已创建）
+- 普通仓库 `hujinnvshi/opengood-hub`。
+- SSH 地址：`git@github.com:hujinnvshi/opengood-hub.git`
 
 ### B. 配置 DNS 解析（在 opengood.cc 的 DNS 后台）
 添加一条 CNAME 记录：
 
-| 字段 | 值 |
-|---|---|
-| 类型 | CNAME |
-| 主机 / 主机记录 | `github` |
-| 记录值 | `你的用户名.github.io.`（**结尾有个点**） |
+| 类型 | 主机 / 主机记录 | 记录值 |
+|---|---|---|
+| CNAME | `github` | `hujinnvshi.github.io.`（**结尾有个点**） |
 
 > 解析生效通常几分钟到几十分钟。可用 `dig github.opengood.cc` 或 `nslookup github.opengood.cc` 核对。
 
 ### C. 关联远程仓库并推送（本地）
 ```bash
-git remote add origin git@github.com:你的用户名/my-site.git
+git remote add origin git@github.com:hujinnvshi/opengood-hub.git
 git push -u origin main
 ```
 > 如果是把项目目录拷到新机器上，先确保已 `git init` 并完成首次 commit（`git status` 应是 clean）。
@@ -65,7 +65,7 @@ git push -u origin main
 
 本站用自定义域名跑在根目录，**没有配置 `base`**。因此：
 - 域名生效后，https://github.opengood.cc 一切正常 ✅
-- 但在域名绑定/生效**之前**，默认地址 `https://你的用户名.github.io/my-site/` 会**样式丢失**——这是预期的（因为没有 base、根目录指向自定义域名）。绑定域名后即正常。
+- 但在域名绑定/生效**之前**，默认地址 `https://hujinnvshi.github.io/opengood-hub/` 会**样式丢失**——这是预期的（因为没有 base、根目录指向自定义域名）。绑定域名后即正常。
 
 ## 验证清单（逐项打勾）
 
