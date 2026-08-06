@@ -1,0 +1,102 @@
+---
+// Constellation: 首页装饰用的粒子连线背景。纯前端 Canvas，无第三方依赖。
+// 仅在渲染本组件的页面（首页）加载。画布在 JS 里创建并 prepend 到 <body>，
+// 作为 body 直接子节点 + z-index:-1，稳定位于正文之下、页面底色之上。
+---
+
+<script>
+  (() => {
+    if (!document.body) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const canvas = document.createElement('canvas');
+    canvas.setAttribute('aria-hidden', 'true');
+    canvas.style.cssText =
+      'position:fixed;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none;opacity:.55';
+    document.body.prepend(canvas);
+
+    const ctx = canvas.getContext('2d');
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    let w = 0, h = 0, nodes = [], raf = 0;
+    const LINK = 132; // 连线距离阈值（px）
+
+    // 颜色读 OpenGood 主题变量，暗/亮自适应
+    const accent = () =>
+      getComputedStyle(document.documentElement).getPropertyValue('--sl-color-accent').trim() ||
+      '#1ae686';
+
+    function resize() {
+      w = window.innerWidth;
+      h = window.innerHeight;
+      canvas.width = Math.floor(w * dpr);
+      canvas.height = Math.floor(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      // 节点数按视口面积缩放，封顶 34~90
+      const count = Math.min(90, Math.max(34, Math.round((w * h) / 22000)));
+      nodes = Array.from({ length: count }, () => ({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5,
+      }));
+    }
+
+    function frame() {
+      ctx.clearRect(0, 0, w, h);
+      const color = accent();
+      // 移动 + 边缘反弹
+      for (const n of nodes) {
+        n.x += n.vx;
+        n.y += n.vy;
+        if (n.x < 0 || n.x > w) n.vx *= -1;
+        if (n.y < 0 || n.y > h) n.vy *= -1;
+      }
+      // 连线（透明度随距离衰减）
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = color;
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[i].x - nodes[j].x;
+          const dy = nodes[i].y - nodes[j].y;
+          const d = Math.hypot(dx, dy);
+          if (d < LINK) {
+            ctx.globalAlpha = (1 - d / LINK) * 0.5;
+            ctx.beginPath();
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+      // 节点
+      ctx.globalAlpha = 0.7;
+      ctx.fillStyle = color;
+      for (const n of nodes) {
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, 1.6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      raf = requestAnimationFrame(frame);
+    }
+
+    resize();
+    window.addEventListener('resize', resize);
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      } else if (!raf && !reduce) {
+        raf = requestAnimationFrame(frame);
+      }
+    });
+
+    if (reduce) {
+      frame(); // 减少动效：只画一帧静态
+      cancelAnimationFrame(raf);
+      raf = 0;
+    } else {
+      raf = requestAnimationFrame(frame);
+    }
+  })();
+</script>
