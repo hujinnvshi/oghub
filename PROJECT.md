@@ -18,12 +18,14 @@
 | 项 | 值 |
 |---|---|
 | 线上地址 | https://github.opengood.cc |
-| 仓库 | `hujinnvshi/opengood-hub`（当前 Private，**建议改 Public**） |
+| 仓库 | `hujinnvshi/oghub`（**Public**，用于 Pages） |
 | 技术栈 | Astro `7.1.6` + @astrojs/starlight `0.41.7` + sharp `0.35.3` |
 | 运行时 | Node.js `22` |
 | 部署 | GitHub Actions → `gh-pages` 分支 → Pages |
 
 目标：**写 Markdown，剩下全自动**。无数据库、无服务器、无运维。
+
+> 备注：最初建在私有仓库 `hujinnvshi/opengood-hub`，因 GitHub Free 的 Pages 只服务公开仓库，已迁移到公开仓库 `oghub`。
 
 ---
 
@@ -36,15 +38,15 @@
 - 自动部署工作流 `.github/workflows/deploy.yml`（gh-pages 方案 + `permissions: contents: write`）
 - 本地构建 **0 报错**；预览全页 200、CSS/JS/图标/sitemap 200、404 正常
 - 文档：README + DEPLOY + PROJECT
-- 本地 git **3 个提交**，已 push 到 `origin/main`
+- 本地 git 提交完成
 
 ### ⏳ 待用户操作（上线最后一公里）
-1. **仓库改 Public**（免费）或升级 GitHub Pro（$4/月）——否则 Pages 不服务（见 DEPLOY 故障排查）。
-2. 确认 Actions 放行（Settings → Actions → General，默认开）。
-3. 等 Actions 绿勾、`gh-pages` 分支自动生成。
-4. Pages：Source = `Deploy from a branch` → 分支 `gh-pages` / `(root)`。
-5. 绑定自定义域名 `github.opengood.cc` + 勾 **Enforce HTTPS**。
-6. 访问 https://github.opengood.cc 逐项验证。
+1. 确认 Actions 放行（Settings → Actions → General，默认开）。
+2. 等 Actions 绿勾、`gh-pages` 分支自动生成。
+3. Pages：Source = `Deploy from a branch` → 分支 `gh-pages` / `(root)`。
+4. 绑定自定义域名 `github.opengood.cc` + 勾 **Enforce HTTPS**。
+   - 若提示域名被占用：去旧仓库 `opengood-hub` 的 Settings → Pages 删除该自定义域名（一个域名只能被一个仓库认领），再回 `oghub` 绑定。
+5. 访问 https://github.opengood.cc 逐项验证。
 
 ---
 
@@ -66,7 +68,7 @@ GitHub Pages 服务 gh-pages 分支 ──▶ https://github.opengood.cc
 ## 4. 目录结构与关键文件
 
 ```
-opengood-hub/
+oghub/
 ├─ astro.config.mjs              # 站点配置：site / sidebar / social
 ├─ package.json / package-lock.json
 ├─ tsconfig.json
@@ -101,7 +103,7 @@ opengood-hub/
 
 | 决策 | 选择 | 理由 |
 |---|---|---|
-| 仓库类型 | 普通仓库 `opengood-hub` | 灵活；自定义域名下不影响最终 URL |
+| 仓库类型 | 普通仓库 `oghub`（Public） | 灵活；自定义域名下不影响最终 URL；公开仓库免费 Pages |
 | 域名 | 自定义 `github.opengood.cc`（子域名） | 独立、专业；DNS 用 CNAME |
 | `base` | **不写** | 自定义域名跑根目录；写了反而资源 404 |
 | `public/CNAME` | 放 `github.opengood.cc` | gh-pages 覆盖式部署，无此文件域名会被冲掉 |
@@ -118,8 +120,9 @@ opengood-hub/
 3. **侧边栏 `autogenerate`**：v0.39+ 不再允许 `{ label, autogenerate }`，须包成 `{ label, items:[{ autogenerate }] }`。
 4. **Node 版本**：最新 Astro 需 Node 22+；Node 20 连脚手架都跑不起来。
 5. **改 `package.json` 名称**：改完必须 `npm install` 同步 `package-lock.json`，否则 CI 的 `npm ci` 失败。
+6. **私有仓库 + Pages**：GitHub Free 的 Pages 只服务公开仓库；私有仓库要 GitHub Pro（$4/月）。故迁移到公开仓库 `oghub`。
 
-> 这些都是本地 `build` 关卡兜住的——再次印证「推送前必须 build + preview」。
+> 这些大多被本地 `build` 关卡兜住——再次印证「推送前必须 build + preview」。
 
 ---
 
@@ -139,8 +142,9 @@ opengood-hub/
 | 2 配置 | `astro.config.mjs` / `public/CNAME` / `deploy.yml` | ✅ |
 | 3 内容 | 首页 + 文章 + 项目 + 关于 | ✅ |
 | 4 构建验证 | `npm run build` + `preview` | ✅ 0 报错、全 200 |
-| 5 git | init + 3 提交 + push origin | ✅ |
+| 5 git | init + 提交 + push | ✅ |
 | 6 文档 | README + DEPLOY + PROJECT | ✅ |
+| 7 迁移 | 迁到公开仓库 `oghub`（免费 Pages） | ✅ |
 
 ---
 
@@ -190,3 +194,5 @@ opengood-hub/
 | `0307ba7` | init astro + starlight site (custom domain github.opengood.cc) |
 | `ad6d956` | docs: 新增「搭建本站点」展示文章，首页链接更新，移除示例 hello |
 | `63596d4` | chore: 应用真实身份 —— 仓库 opengood-hub / 用户 hujinnvshi |
+| `101d800` | docs: 整理项目交接文档 PROJECT.md，DEPLOY 补充私有仓库注意事项 |
+| （本次） | 迁移到公开仓库 oghub：重命名引用 + 文档状态更新 |

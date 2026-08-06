@@ -2,14 +2,14 @@
 
 本文档面向**首次上线**：把本地项目部署到 GitHub Pages 并绑定自定义域名 `github.opengood.cc`。日常更新见 [README.md](./README.md)。
 
-> 本项目对应仓库：`hujinnvshi/opengood-hub`（SSH：`git@github.com:hujinnvshi/opengood-hub.git`）
+> 本项目对应仓库：`hujinnvshi/oghub`（SSH：`git@github.com:hujinnvshi/oghub.git`）
 
 ## 前置条件
 
 - GitHub 账号
 - 本地已装 Node.js **22+**、git
 - 拥有 `opengood.cc` 的 DNS 解析控制权（域名注册商或 DNS 服务商后台）
-- **仓库需为 Public**（或账号为 GitHub Pro）：GitHub Free 的 Pages 只服务**公开**仓库。本仓库目前是 **Private**，需在 Settings → General → Danger Zone 改为 Public，否则 Pages 无法对外访问。
+- **仓库需为 Public**：GitHub Free 的 Pages 只服务**公开**仓库。`oghub` 已是 Public，满足条件（旧仓库 opengood-hub 是 Private，已弃用）。
 
 ## 部署原理（理解这一段，排错不慌）
 
@@ -26,8 +26,8 @@ GitHub Pages 服务 gh-pages 分支 ──▶ https://github.opengood.cc
 ## 一次性上线步骤
 
 ### A. GitHub 仓库（已创建）
-- 普通仓库 `hujinnvshi/opengood-hub`。
-- SSH 地址：`git@github.com:hujinnvshi/opengood-hub.git`
+- 普通仓库 `hujinnvshi/oghub`。
+- SSH 地址：`git@github.com:hujinnvshi/oghub.git`
 
 ### B. 配置 DNS 解析（在 opengood.cc 的 DNS 后台）
 添加一条 CNAME 记录：
@@ -40,7 +40,7 @@ GitHub Pages 服务 gh-pages 分支 ──▶ https://github.opengood.cc
 
 ### C. 关联远程仓库并推送（本地）
 ```bash
-git remote add origin git@github.com:hujinnvshi/opengood-hub.git
+git remote add origin git@github.com:hujinnvshi/oghub.git
 git push -u origin main
 ```
 > 如果是把项目目录拷到新机器上，先确保已 `git init` 并完成首次 commit（`git status` 应是 clean）。
@@ -66,7 +66,7 @@ git push -u origin main
 
 本站用自定义域名跑在根目录，**没有配置 `base`**。因此：
 - 域名生效后，https://github.opengood.cc 一切正常 ✅
-- 但在域名绑定/生效**之前**，默认地址 `https://hujinnvshi.github.io/opengood-hub/` 会**样式丢失**——这是预期的（因为没有 base、根目录指向自定义域名）。绑定域名后即正常。
+- 但在域名绑定/生效**之前**，默认地址 `https://hujinnvshi.github.io/oghub/` 会**样式丢失**——这是预期的（因为没有 base、根目录指向自定义域名）。绑定域名后即正常。
 
 ## 验证清单（逐项打勾）
 

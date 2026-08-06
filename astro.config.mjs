@@ -12,7 +12,7 @@ export default defineConfig({
     starlight({
       title: '我的站点',
       social: [
-        { icon: 'github', label: 'GitHub', href: 'https://github.com/hujinnvshi/opengood-hub' },
+        { icon: 'github', label: 'GitHub', href: 'https://github.com/hujinnvshi/oghub' },
       ],
       sidebar: [
         // Starlight v0.39+：autogenerate 不能直接带 label，要包在 { label, items: [...] } 里
