@@ -1,0 +1,43 @@
+---
+title: 我的个人站点
+description: 文章、方案与项目介绍。
+template: splash
+hero:
+  tagline: 记录技术文章、项目方案与个人作品。
+  image:
+    file: ../../assets/houston.webp
+  actions:
+    - text: 浏览文章
+      link: /articles/hello/
+      icon: right-arrow
+    - text: 看项目
+      link: /projects/demo-proj/
+      icon: right-arrow
+      variant: minimal
+    - text: 关于我
+      link: /about/
+      icon: right-arrow
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## 这里有什么
+
+<CardGrid stagger>
+	<Card title="文章" icon="pencil">
+		技术随笔、学习笔记与实践总结。
+	</Card>
+	<Card title="项目" icon="document">
+		个人作品与开源项目介绍。
+	</Card>
+	<Card title="关于我" icon="setting">
+		技能、经历与联系方式。
+	</Card>
+</CardGrid>
+
+## 如何使用本站点
+
+- 顶部与侧边栏可切换「文章」「项目」「关于我」。
+- 右上角支持搜索。
+- 新内容以 Markdown 写在 `src/content/docs/` 下，推送后自动发布。
