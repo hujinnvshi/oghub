@@ -21,10 +21,10 @@ export default defineConfig({
       ],
       sidebar: [
         // Starlight v0.39+：autogenerate 不能直接带 label，要包在 { label, items: [...] } 里
-        { label: '新闻动态', items: [{ autogenerate: { directory: 'news' } }] },
-        { label: '技术方案', items: [{ autogenerate: { directory: 'tech' } }] },
-        { label: '项目', items: [{ autogenerate: { directory: 'projects' } }] },
-        { label: '关于我', slug: 'about' },
+        { label: '📰 新闻动态', items: [{ autogenerate: { directory: 'news' } }] },
+        { label: '🛠️ 技术方案', items: [{ autogenerate: { directory: 'tech' } }] },
+        { label: '🚀 项目', items: [{ autogenerate: { directory: 'projects' } }] },
+        { label: '👋 关于我', slug: 'about' },
       ],
     }),
   ],

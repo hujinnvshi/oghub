@@ -19,6 +19,7 @@
 :root[data-theme='light'] { --og-tech-link-border: #2fa474; }   /* 亮色模式略深 */
 
 .top-level a[href^="/tech/"] {
-  border: 2px dashed var(--og-tech-link-border);
+  border: 1px dashed var(--og-tech-link-border);   /* 2px → 1px，更细 */
   border-radius: 0.5rem;
+  margin-bottom: 0.25rem;                           /* 间隔，避免贴合显粗 */
 }
