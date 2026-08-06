@@ -9,6 +9,7 @@
 - GitHub 账号
 - 本地已装 Node.js **22+**、git
 - 拥有 `opengood.cc` 的 DNS 解析控制权（域名注册商或 DNS 服务商后台）
+- **仓库需为 Public**（或账号为 GitHub Pro）：GitHub Free 的 Pages 只服务**公开**仓库。本仓库目前是 **Private**，需在 Settings → General → Danger Zone 改为 Public，否则 Pages 无法对外访问。
 
 ## 部署原理（理解这一段，排错不慌）
 
@@ -87,6 +88,7 @@ git push -u origin main
 | 域名打不开 / 不稳定 | DNS 未生效或记录错。`dig github.opengood.cc` 应解析到 GitHub Pages。 |
 | HTTPS 证书未签发 | 绑定域名后等几分钟；确认 DNS 已生效再勾 Enforce HTTPS。 |
 | 改了内容线上没更新 | 确认 push 到 `main` 且 Actions 绿勾；浏览器可能缓存，强刷 Ctrl+Shift+R。 |
+| 站点打不开 / Pages 提示不可用 | 仓库是 Private 且账号为 Free：GitHub Free 的 Pages 只支持公开仓库。把仓库设为 Public（免费），或升级 GitHub Pro（$4/月）。 |
 
 ## 升级提示
 

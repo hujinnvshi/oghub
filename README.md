@@ -102,5 +102,6 @@ push 后几分钟，https://github.opengood.cc 自动更新。
 
 ## 相关文档
 
+- 项目全貌 / 决策记录 / 交接：[PROJECT.md](./PROJECT.md)
 - 首次上线 / 域名 / 部署排错：[DEPLOY.md](./DEPLOY.md)
 - [Starlight 文档](https://starlight.astro.build) · [Astro 文档](https://docs.astro.build)
