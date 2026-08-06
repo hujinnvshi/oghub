@@ -14,12 +14,15 @@ export default defineConfig({
       tagline: '向善 · 开放',
       logo: { src: './src/assets/logo.svg', alt: 'OpenGood' },
       customCss: ['./src/styles/theme.css'],
+      components: { Head: './src/components/Head.astro' },
       social: [
         { icon: 'github', label: 'GitHub', href: 'https://github.com/hujinnvshi/oghub' },
+        { icon: 'rss', label: 'RSS', href: '/rss.xml' },
       ],
       sidebar: [
         // Starlight v0.39+：autogenerate 不能直接带 label，要包在 { label, items: [...] } 里
-        { label: '文章', items: [{ autogenerate: { directory: 'articles' } }] },
+        { label: '新闻动态', items: [{ autogenerate: { directory: 'news' } }] },
+        { label: '技术方案', items: [{ autogenerate: { directory: 'tech' } }] },
         { label: '项目', items: [{ autogenerate: { directory: 'projects' } }] },
         { label: '关于我', slug: 'about' },
       ],

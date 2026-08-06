@@ -1,6 +1,7 @@
 ---
 title: 从零搭建 Astro + Starlight 个人站点（GitHub Pages + 自定义域名）
 description: 记录用 Astro + Starlight 搭建个人静态站点、部署到 GitHub Pages 并绑定自定义域名的完整过程、关键决策与踩坑总结。
+pubDate: 2026-08-06
 ---
 
 我把「搭建这个站点」本身当作第一篇真实文章——既是内容示范，也是一次完整记录。
