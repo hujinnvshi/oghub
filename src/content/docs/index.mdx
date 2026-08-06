@@ -1,20 +1,20 @@
 ---
-title: 我的个人站点
-description: 文章、方案与项目介绍。
+title: OpenGood
+description: 向善 · 开放 —— 开放的知识与工具，为善而生。
 template: splash
 hero:
-  tagline: 记录技术文章、项目方案与个人作品。
+  tagline: 以开放的姿态，做向善的事。
   image:
     file: ../../assets/houston.webp
   actions:
-    - text: 浏览文章
+    - text: 开放笔记
       link: /articles/build-personal-site/
       icon: right-arrow
-    - text: 看项目
+    - text: 向善项目
       link: /projects/demo-proj/
       icon: right-arrow
       variant: minimal
-    - text: 关于我
+    - text: 关于 OpenGood
       link: /about/
       icon: right-arrow
       variant: minimal
@@ -25,19 +25,19 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 ## 这里有什么
 
 <CardGrid stagger>
-	<Card title="文章" icon="pencil">
-		技术随笔、学习笔记与实践总结。
+	<Card title="开放笔记" icon="pencil">
+		把学到的、做过的写下来，开放给所有人。
 	</Card>
-	<Card title="项目" icon="document">
-		个人作品与开源项目介绍。
+	<Card title="向善项目" icon="document">
+		用技术做点有益的小事，开源共享、欢迎共筑。
 	</Card>
-	<Card title="关于我" icon="setting">
-		技能、经历与联系方式。
+	<Card title="关于 OpenGood" icon="setting">
+		开放与向善，是这里的两条主线。
 	</Card>
 </CardGrid>
 
-## 如何使用本站点
+## 这是什么
 
-- 顶部与侧边栏可切换「文章」「项目」「关于我」。
-- 右上角支持搜索。
-- 新内容以 Markdown 写在 `src/content/docs/` 下，推送后自动发布。
+OpenGood 取 **Open（开放）+ Good（向善）** 之意：用开放的方式沉淀知识，用向善的心态对待技术。
+
+顶部与侧边栏可切换「文章」「项目」「关于」；右上角支持搜索。新内容以 Markdown 写在 `src/content/docs/` 下，推送后自动发布。

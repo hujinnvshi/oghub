@@ -1,0 +1,15 @@
+/* OpenGood 主题色：翠青绿
+   向善（生长 / 善 / 希望）+ 开放（开放草地 / 开源 / 开放知识）—— 两词的最大交集。
+   覆盖 Starlight 的 accent 变量；dark 在 :root，light 在 :root[data-theme='light']。 */
+
+:root {
+  --sl-color-accent: hsl(152, 80%, 50%);
+  --sl-color-accent-low: hsl(152, 50%, 18%);
+  --sl-color-accent-high: hsl(152, 70%, 80%);
+}
+
+:root[data-theme='light'] {
+  --sl-color-accent: hsl(152, 70%, 40%);
+  --sl-color-accent-low: hsl(152, 60%, 90%);
+  --sl-color-accent-high: hsl(152, 60%, 30%);
+}

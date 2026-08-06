@@ -10,7 +10,10 @@ export default defineConfig({
   site: 'https://github.opengood.cc',
   integrations: [
     starlight({
-      title: '我的站点',
+      title: 'OpenGood',
+      tagline: '向善 · 开放',
+      logo: { src: './src/assets/logo.svg', alt: 'OpenGood' },
+      customCss: ['./src/styles/theme.css'],
       social: [
         { icon: 'github', label: 'GitHub', href: 'https://github.com/hujinnvshi/oghub' },
       ],
