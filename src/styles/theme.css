@@ -13,3 +13,12 @@
   --sl-color-accent-low: hsl(152, 60%, 90%);
   --sl-color-accent-high: hsl(152, 60%, 30%);
 }
+
+/* 侧边栏「技术方案」文章标题：浅绿粗虚线圆角框（仅 tech 分组） */
+:root { --og-tech-link-border: #5fd49a; }                       /* 浅绿（暗色模式）*/
+:root[data-theme='light'] { --og-tech-link-border: #2fa474; }   /* 亮色模式略深 */
+
+.top-level a[href^="/tech/"] {
+  border: 2px dashed var(--og-tech-link-border);
+  border-radius: 0.5rem;
+}
