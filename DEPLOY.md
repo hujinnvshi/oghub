@@ -81,6 +81,7 @@ git push -u origin main
 | 现象 | 原因 / 解决 |
 |---|---|
 | 样式全丢、资源 404 | `base` 配置错。本站用自定义域名根目录，**不要写 base**；确认 `astro.config.mjs` 没有 `base`。 |
+| 页面能开但样式乱（`_astro/*.css` 404） | gh-pages 用 Jekyll 处理，会丢掉 `_` 开头的 `_astro/` 目录。加空文件 `public/.nojekyll` 禁用 Jekyll（本项目已加）。 |
 | 自定义域名每次部署后失效 | 缺 `public/CNAME`。本仓库已含，**不要删**。 |
 | Actions 失败：permission denied | 见步骤 D；确认 `.github/workflows/deploy.yml` 有 `permissions: contents: write`。 |
 | Actions 失败：npm ci 报错 | `package-lock.json` 与依赖不一致。本地重跑 `npm install` 后重新提交 `package-lock.json`。 |

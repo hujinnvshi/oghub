@@ -93,6 +93,7 @@ push 后几分钟，https://github.opengood.cc 自动更新。
 
 - `astro.config.mjs` 里 `site: 'https://github.opengood.cc'`，**不写 `base`**：因为站点跑在自定义域名根目录。
 - `public/CNAME` 内容为 `github.opengood.cc`：让 gh-pages 覆盖式部署时不丢失自定义域名设置（**不要删**）。
+- `public/.nojekyll`（空文件）：禁用 GitHub Pages 的 Jekyll，否则 `_astro/` 等下划线开头的目录会被丢弃、样式 404。
 - `.github/workflows/deploy.yml`：push `main` 时用 Node 22 构建，把 `dist` 推到 `gh-pages` 分支。
 
 ## 图片
