@@ -2,12 +2,26 @@
 // Constellation: 首页装饰用的粒子连线背景。纯前端 Canvas，无第三方依赖。
 // 仅在渲染本组件的页面（首页）加载。画布在 JS 里创建并 prepend 到 <body>，
 // 作为 body 直接子节点 + z-index:-1，稳定位于正文之下、页面底色之上。
+//
+// 幂等：本 <script> 会被 Astro 内联进页面 HTML，在 ClientRouter（View Transitions）
+// 无刷新导航时会重新执行。因此每次进入都先销毁上一份实例——
+// 移除旧 canvas、解绑 resize/visibilitychange、取消 rAF，避免堆积与监听器泄漏。
 ---
 
 <script>
   (() => {
     if (!document.body) return;
+
+    // 幂等：先销毁上一次实例（若有）
+    if (document.body.__ogConstellation) {
+      document.body.__ogConstellation.destroy();
+    }
+
+    // 「减少动效」不再画成完全静态，而是降速 + 降亮，仍保留轻微运动；
+    // 既不让画面冻住，又尊重无障碍偏好。
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const speedScale = reduce ? 0.35 : 1;
+    const alphaScale = reduce ? 0.6 : 1;
 
     const canvas = document.createElement('canvas');
     canvas.setAttribute('aria-hidden', 'true');
@@ -44,14 +58,14 @@
     function frame() {
       ctx.clearRect(0, 0, w, h);
       const color = accent();
-      // 移动 + 边缘反弹
+      // 移动 + 边缘反弹（reduce 时降速）
       for (const n of nodes) {
-        n.x += n.vx;
-        n.y += n.vy;
+        n.x += n.vx * speedScale;
+        n.y += n.vy * speedScale;
         if (n.x < 0 || n.x > w) n.vx *= -1;
         if (n.y < 0 || n.y > h) n.vy *= -1;
       }
-      // 连线（透明度随距离衰减）
+      // 连线（透明度随距离衰减；reduce 时整体再降）
       ctx.lineWidth = 1;
       ctx.strokeStyle = color;
       for (let i = 0; i < nodes.length; i++) {
@@ -60,7 +74,7 @@
           const dy = nodes[i].y - nodes[j].y;
           const d = Math.hypot(dx, dy);
           if (d < LINK) {
-            ctx.globalAlpha = (1 - d / LINK) * 0.5;
+            ctx.globalAlpha = (1 - d / LINK) * 0.5 * alphaScale;
             ctx.beginPath();
             ctx.moveTo(nodes[i].x, nodes[i].y);
             ctx.lineTo(nodes[j].x, nodes[j].y);
@@ -69,7 +83,7 @@
         }
       }
       // 节点
-      ctx.globalAlpha = 0.7;
+      ctx.globalAlpha = 0.7 * alphaScale;
       ctx.fillStyle = color;
       for (const n of nodes) {
         ctx.beginPath();
@@ -80,23 +94,30 @@
       raf = requestAnimationFrame(frame);
     }
 
-    resize();
-    window.addEventListener('resize', resize);
-    document.addEventListener('visibilitychange', () => {
+    function onVisibility() {
       if (document.hidden) {
         cancelAnimationFrame(raf);
         raf = 0;
-      } else if (!raf && !reduce) {
+      } else if (!raf) {
         raf = requestAnimationFrame(frame);
       }
-    });
-
-    if (reduce) {
-      frame(); // 减少动效：只画一帧静态
-      cancelAnimationFrame(raf);
-      raf = 0;
-    } else {
-      raf = requestAnimationFrame(frame);
     }
+
+    resize();
+    window.addEventListener('resize', resize);
+    document.addEventListener('visibilitychange', onVisibility);
+    raf = requestAnimationFrame(frame);
+
+    // 暴露销毁句柄，供下次执行幂等清理
+    document.body.__ogConstellation = {
+      destroy() {
+        cancelAnimationFrame(raf);
+        raf = 0;
+        window.removeEventListener('resize', resize);
+        document.removeEventListener('visibilitychange', onVisibility);
+        canvas.remove();
+        delete document.body.__ogConstellation;
+      },
+    };
   })();
 </script>

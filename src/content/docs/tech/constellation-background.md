@@ -52,17 +52,44 @@ const accent = () =>
 
 ## 关键点三：无障碍 + 性能
 
-- **`prefers-reduced-motion`**：系统开了"减少动效"就只画一帧静态，不跑动画循环。
+- **`prefers-reduced-motion`**：系统开了"减少动效"时**降速 + 降亮**（速度 ×0.35、透明度 ×0.6），保留轻微运动而非冻成静态——既不晃眼，又不至于让画面僵死。
 - **`requestAnimationFrame`** + 切后台 `visibilitychange` 暂停，不空耗。
 - **`devicePixelRatio`** 缩放，高清屏不糊；节点数按视口面积算、封顶 90，O(n²) 连线检查也就几千次/帧，毫无压力。
 - **`pointer-events:none`** + `aria-hidden`：纯装饰，不挡点击、屏幕阅读器忽略。
 
 ## 关键点四：只在首页加载
 
-Astro 会把组件里的 `<script>` **按页打包**——只有渲染了 `<Constellation />` 的页面（首页）才带这段脚本，内容页零开销。
+Astro 会把组件里的 `<script>` **只打进首页的产物**——小脚本默认被内联进首页 HTML，只有渲染了 `<Constellation />` 的页面才带这段脚本，内容页零开销。
+
+## 关键点五：ClientRouter 下要幂等（导航重跑）
+
+上一节说脚本被「内联进首页 HTML」，而 Starlight 默认开启 ClientRouter（View Transitions）做无刷新导航——**内联 `<script>` 在每次导航都会重新执行**（外链 module 才只跑一次）。
+
+后果：每次切回首页都会再 `prepend` 一个 canvas、再绑一组 `resize` / `visibilitychange` 监听、再起一个 rAF 循环，旧的却不清——越积越亮、CPU 空耗。
+
+解法是把特效做成**幂等实例**：每次进来先 `destroy()` 上一份（取消 rAF、解绑监听、移除 canvas），再建新的：
+
+```js
+if (document.body.__ogConstellation) document.body.__ogConstellation.destroy();
+// …建 canvas、起循环…
+document.body.__ogConstellation = {
+  destroy() {
+    cancelAnimationFrame(raf);
+    window.removeEventListener('resize', resize);
+    document.removeEventListener('visibilitychange', onVisibility);
+    canvas.remove();
+    delete document.body.__ogConstellation;
+  },
+};
+```
 
 ## 小结
 
 - 静态站完全能做动态视觉效果，纯前端 Canvas 即可，无需后端。
 - 画布 `prepend` 到 `body` + `z-index:-1`，靠 CSS 背景传播规则稳稳落在底色与正文之间。
-- 无障碍（reduced-motion）+ 性能（rAF / DPR / 暂停 / 封顶）+ 按页加载，都顾上了。
+- 无障碍（reduced-motion 改为**降速降亮**而非静态）+ 性能（rAF / DPR / 暂停 / 封顶）+ 按页加载，都顾上了。
+- ClientRouter 下用**幂等实例**防导航重跑导致的 canvas / 监听 / rAF 堆积。
+
+## 修订记录
+
+- 2026-08-07：`prefers-reduced-motion` 由「只画一帧静态」改为「降速降亮仍运动」（修复首页在系统开启「减少动效」时画面僵死）；并补上幂等 `destroy()`，解决 ClientRouter 无刷新导航重复执行造成的 canvas 与监听器堆积。
