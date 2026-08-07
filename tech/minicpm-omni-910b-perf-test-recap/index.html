@@ -1,0 +1,417 @@
+<!DOCTYPE html><html lang="en" dir="ltr" data-theme="dark" data-has-toc data-has-sidebar class="astro-vdxcvpsm"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>MiniCPM-o 4.5 昇腾 910B 推理优化：双工 RTF 与三项 Benchmark 测试复盘 | OpenGood</title><link rel="canonical" href="https://github.opengood.cc/tech/minicpm-omni-910b-perf-test-recap/"/><link rel="sitemap" href="/sitemap-index.xml"/><link rel="shortcut icon" href="/favicon.svg" type="image/svg+xml"/><meta name="generator" content="Astro v7.1.6"/><meta name="generator" content="Starlight v0.41.7"/><meta property="og:title" content="MiniCPM-o 4.5 昇腾 910B 推理优化：双工 RTF 与三项 Benchmark 测试复盘"/><meta property="og:type" content="article"/><meta property="og:url" content="https://github.opengood.cc/tech/minicpm-omni-910b-perf-test-recap/"/><meta property="og:locale" content="en"/><meta property="og:description" content="记录一天内在昇腾 910B3 单卡上把 MiniCPM-o 4.5 全双工推理的 SPEAK→WAV RTF 从基线 1.087 压到 0.68 的优化链、遇到的 vocoder/whisper/多帧退化等问题与修复，以及三项精度 benchmark 的验收现状与认知更正。"/><meta property="og:site_name" content="OpenGood"/><meta name="twitter:card" content="summary_large_image"/><meta name="description" content="记录一天内在昇腾 910B3 单卡上把 MiniCPM-o 4.5 全双工推理的 SPEAK→WAV RTF 从基线 1.087 压到 0.68 的优化链、遇到的 vocoder/whisper/多帧退化等问题与修复，以及三项精度 benchmark 的验收现状与认知更正。"/><link rel="alternate" type="application/rss+xml" title="OpenGood" href="/rss.xml"><script>
+	window.StarlightThemeProvider = (() => {
+		const storedTheme =
+			typeof localStorage !== 'undefined' && localStorage.getItem('starlight-theme');
+		const theme =
+			storedTheme ||
+			(window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+		document.documentElement.dataset.theme = theme === 'light' ? 'light' : 'dark';
+		return {
+			updatePickers(theme = storedTheme || 'auto') {
+				document.querySelectorAll('starlight-theme-select').forEach((picker) => {
+					const select = picker.querySelector('select');
+					if (select) select.value = theme;
+					/** @type {HTMLTemplateElement | null} */
+					const tmpl = document.querySelector(`#theme-icons`);
+					const newIcon = tmpl && tmpl.content.querySelector('.' + theme);
+					if (newIcon) {
+						const oldIcon = picker.querySelector('svg.label-icon');
+						if (oldIcon) {
+							oldIcon.replaceChildren(...newIcon.cloneNode(true).childNodes);
+						}
+					}
+				});
+			},
+		};
+	})();
+</script><template id="theme-icons"><svg aria-hidden="true" class="light astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M5 12a1 1 0 0 0-1-1H3a1 1 0 0 0 0 2h1a1 1 0 0 0 1-1Zm.64 5-.71.71a1 1 0 0 0 0 1.41 1 1 0 0 0 1.41 0l.71-.71A1 1 0 0 0 5.64 17ZM12 5a1 1 0 0 0 1-1V3a1 1 0 0 0-2 0v1a1 1 0 0 0 1 1Zm5.66 2.34a1 1 0 0 0 .7-.29l.71-.71a1 1 0 1 0-1.41-1.41l-.66.71a1 1 0 0 0 0 1.41 1 1 0 0 0 .66.29Zm-12-.29a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.71-.71a1.004 1.004 0 1 0-1.43 1.41l.73.71ZM21 11h-1a1 1 0 0 0 0 2h1a1 1 0 0 0 0-2Zm-2.64 6A1 1 0 0 0 17 18.36l.71.71a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.76-.66ZM12 6.5a5.5 5.5 0 1 0 5.5 5.5A5.51 5.51 0 0 0 12 6.5Zm0 9a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Zm0 3.5a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 0-1-1Z"/></svg><svg aria-hidden="true" class="dark astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.64 13a1 1 0 0 0-1.05-.14 8.049 8.049 0 0 1-3.37.73 8.15 8.15 0 0 1-8.14-8.1 8.59 8.59 0 0 1 .25-2A1 1 0 0 0 8 2.36a10.14 10.14 0 1 0 14 11.69 1 1 0 0 0-.36-1.05Zm-9.5 6.69A8.14 8.14 0 0 1 7.08 5.22v.27a10.15 10.15 0 0 0 10.14 10.14 9.784 9.784 0 0 0 2.1-.22 8.11 8.11 0 0 1-7.18 4.32v-.04Z"/></svg><svg aria-hidden="true" class="auto astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg></template><link rel="stylesheet" href="/_astro/print.ehPL0gv-.css" media="print"><link rel="stylesheet" href="/_astro/common.DJrPAfyb.css"><style>@layer starlight.components{.card:where(.astro-zts4jgjd){--sl-card-border:var(--sl-color-purple);--sl-card-bg:var(--sl-color-purple-low);border:1px solid var(--sl-color-gray-5);background-color:var(--sl-color-black);flex-direction:column;gap:clamp(.5rem,.125rem + 1vw,1rem);padding:clamp(1rem,.125rem + 3vw,2.5rem)}.card:where(.astro-zts4jgjd):nth-child(4n+1){--sl-card-border:var(--sl-color-orange);--sl-card-bg:var(--sl-color-orange-low)}.card:where(.astro-zts4jgjd):nth-child(4n+3){--sl-card-border:var(--sl-color-green);--sl-card-bg:var(--sl-color-green-low)}.card:where(.astro-zts4jgjd):nth-child(4n+4){--sl-card-border:var(--sl-color-red);--sl-card-bg:var(--sl-color-red-low)}.card:where(.astro-zts4jgjd):nth-child(4n+5){--sl-card-border:var(--sl-color-blue);--sl-card-bg:var(--sl-color-blue-low)}.title:where(.astro-zts4jgjd){font-weight:600;font-size:var(--sl-text-h4);color:var(--sl-color-white);line-height:var(--sl-line-height-headings);align-items:center;gap:1rem}.card:where(.astro-zts4jgjd) .icon:where(.astro-zts4jgjd){border:1px solid var(--sl-card-border);background-color:var(--sl-card-bg);border-radius:.25rem;flex-shrink:0;padding:.2em}.card:where(.astro-zts4jgjd) .body:where(.astro-zts4jgjd){font-size:clamp(var(--sl-text-sm), calc(.5rem + 1vw), var(--sl-text-body));margin:0}.card-grid:where(.astro-lmor3ela){grid-template-columns:100%;gap:1rem;display:grid}.card-grid:where(.astro-lmor3ela)>*{margin-top:0!important}@media (width>=50rem){.card-grid:where(.astro-lmor3ela){grid-template-columns:1fr 1fr;gap:1.5rem}.stagger:where(.astro-lmor3ela){--stagger-height:5rem;padding-bottom:var(--stagger-height)}.stagger:where(.astro-lmor3ela)>:nth-child(2n){transform:translateY(var(--stagger-height))}}}
+@layer starlight.components{svg:where(.astro-n5k4ipy7){color:var(--sl-icon-color);font-size:var(--sl-icon-size,1em);width:1em;height:1em}}
+</style><script type="module" src="/_astro/page.Dwipeu-R.js"></script></head><body class="astro-vdxcvpsm"><a class="sl-skip-link astro-vxeigawq" href="#_top">Skip to content</a><div class="page sl-flex astro-gqpr5s5a"><header class="header astro-gqpr5s5a"><div class="header astro-nczgtkxc"><div class="title-wrapper sl-flex astro-nczgtkxc"><a href="/" class="site-title sl-flex astro-clw6ags5"><img class="astro-clw6ags5" alt="OpenGood" src="/_astro/logo.j_QfFhns.svg" width="32" height="32"><span class="astro-clw6ags5" translate="no">OpenGood</span></a></div><div class="sl-flex print:hidden astro-nczgtkxc"><site-search class="astro-nczgtkxc astro-r5ar4xm7" data-translations="{&quot;placeholder&quot;:&quot;Search&quot;}"><button data-open-modal disabled aria-label="Search" aria-keyshortcuts="Control+K" class="astro-r5ar4xm7"><svg aria-hidden="true" class="astro-r5ar4xm7 astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.71 20.29 18 16.61A9 9 0 1 0 16.61 18l3.68 3.68a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.39ZM11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"/></svg><span class="sl-hidden md:sl-block astro-r5ar4xm7" aria-hidden="true">Search</span><kbd class="sl-hidden md:sl-flex astro-r5ar4xm7" style="display: none;"><kbd class="astro-r5ar4xm7">Ctrl</kbd><kbd class="astro-r5ar4xm7">K</kbd></kbd></button><dialog style="padding:0" aria-label="Search" class="astro-r5ar4xm7"><div class="dialog-frame sl-flex astro-r5ar4xm7"><button data-close-modal class="sl-flex md:sl-hidden astro-r5ar4xm7">Cancel</button><div class="search-container astro-r5ar4xm7"><div id="starlight__search" class="astro-r5ar4xm7"></div></div></div></dialog></site-search><script>
+	(() => {
+		const openBtn = document.querySelector('button[data-open-modal]');
+		const shortcut = openBtn?.querySelector('kbd');
+		if (!openBtn || !(shortcut instanceof HTMLElement)) return;
+		const platformKey = shortcut.querySelector('kbd');
+		if (platformKey && /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform)) {
+			platformKey.textContent = '⌘';
+			openBtn.setAttribute('aria-keyshortcuts', 'Meta+K');
+		}
+		shortcut.style.display = '';
+	})();
+</script><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.B-Vh4ymV.js"></script></div><div class="sl-hidden md:sl-flex print:hidden right-group astro-nczgtkxc"><div class="sl-flex social-icons astro-nczgtkxc"><a href="https://github.com/hujinnvshi/oghub" rel="me" class="sl-flex astro-cg55etiy"><span class="sr-only astro-cg55etiy">GitHub</span><svg aria-hidden="true" class="astro-cg55etiy astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a><a href="/rss.xml" rel="me" class="sl-flex astro-cg55etiy"><span class="sr-only astro-cg55etiy">RSS</span><svg aria-hidden="true" class="astro-cg55etiy astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M2.88 16.88a3 3 0 0 0 0 4.24 3 3 0 0 0 4.24 0 3 3 0 0 0-4.24-4.24Zm2.83 2.83a1 1 0 0 1-1.42-1.42 1 1 0 0 1 1.42 0 1 1 0 0 1 0 1.42ZM5 12a1 1 0 0 0 0 2 5 5 0 0 1 5 5 1 1 0 0 0 2 0 7 7 0 0 0-7-7Zm0-4a1 1 0 0 0 0 2 9 9 0 0 1 9 9 1 1 0 0 0 2 0 11.08 11.08 0 0 0-3.22-7.78A11.08 11.08 0 0 0 5 8Zm10.61.39A15.11 15.11 0 0 0 5 4a1 1 0 0 0 0 2 13 13 0 0 1 13 13 1 1 0 0 0 2 0 15.11 15.11 0 0 0-4.39-10.61Z"/></svg></a></div><starlight-theme-select><label style="--sl-select-width: 6.25em" class="astro-r2p65idu"><span class="sr-only astro-r2p65idu">Select theme</span><svg aria-hidden="true" class="icon label-icon astro-r2p65idu astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg><select autocomplete="off" class="astro-r2p65idu"><option value="dark" class="astro-r2p65idu">Dark</option><option value="light" class="astro-r2p65idu">Light</option><option value="auto" selected class="astro-r2p65idu">Auto</option></select><svg aria-hidden="true" class="icon caret astro-r2p65idu astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg></label></starlight-theme-select><script>
+	StarlightThemeProvider.updatePickers();
+</script><script type="module">var e=`starlight-theme`,t=e=>e===`auto`||e===`dark`||e===`light`?e:`auto`,n=()=>t(typeof localStorage<`u`&&localStorage.getItem(e));function r(t){typeof localStorage<`u`&&localStorage.setItem(e,t===`light`||t===`dark`?t:``)}var i=()=>matchMedia(`(prefers-color-scheme: light)`).matches?`light`:`dark`;function a(e){StarlightThemeProvider.updatePickers(e),document.documentElement.dataset.theme=e===`auto`?i():e,r(e)}matchMedia(`(prefers-color-scheme: light)`).addEventListener(`change`,()=>{n()===`auto`&&a(`auto`)});var o=class extends HTMLElement{constructor(){super(),a(n()),this.querySelector(`select`)?.addEventListener(`change`,e=>{e.currentTarget instanceof HTMLSelectElement&&a(t(e.currentTarget.value))})}};customElements.define(`starlight-theme-select`,o);</script><script type="module">var e=class extends HTMLElement{constructor(){super();let e=this.querySelector(`select`);e&&(e.addEventListener(`change`,e=>{e.currentTarget instanceof HTMLSelectElement&&(window.location.pathname=e.currentTarget.value)}),window.addEventListener(`pageshow`,t=>{if(!t.persisted)return;let n=e.querySelector(`option[selected]`)?.index;n!==e.selectedIndex&&(e.selectedIndex=n??0)}))}};customElements.define(`starlight-lang-select`,e);</script></div></div></header><nav class="sidebar print:hidden astro-gqpr5s5a" aria-label="Main"><starlight-menu-button class="print:hidden astro-vvx7mffu"><button aria-expanded="false" aria-label="Menu" aria-controls="starlight__sidebar" class="sl-flex md:sl-hidden astro-vvx7mffu"><svg aria-hidden="true" class="open-menu astro-vvx7mffu astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M3 8h18a1 1 0 1 0 0-2H3a1 1 0 0 0 0 2Zm18 8H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Zm0-5H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Z"/></svg><svg aria-hidden="true" class="close-menu astro-vvx7mffu astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="m13.41 12 6.3-6.29a1.004 1.004 0 1 0-1.42-1.42L12 10.59l-6.29-6.3a1.004 1.004 0 0 0-1.42 1.42l6.3 6.29-6.3 6.29a1 1 0 0 0 0 1.42.998.998 0 0 0 1.42 0l6.29-6.3 6.29 6.3a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.42L13.41 12Z"/></svg></button></starlight-menu-button><script type="module">var e=class extends HTMLElement{btn=this.querySelector(`button`);constructor(){super(),this.btn.addEventListener(`click`,()=>this.toggleExpanded());let e=this.closest(`nav`);e&&e.addEventListener(`keyup`,e=>this.closeOnEscape(e)),matchMedia(`(min-width: 50em)`).addEventListener(`change`,()=>this.setExpanded(!1))}setExpanded(e){this.setAttribute(`aria-expanded`,String(e)),document.body.toggleAttribute(`data-mobile-menu-expanded`,e),document.querySelectorAll(`.main-frame, .sl-skip-link`).forEach(t=>{t.toggleAttribute(`inert`,e)})}toggleExpanded(){this.setExpanded(this.getAttribute(`aria-expanded`)!==`true`)}closeOnEscape(e){e.code===`Escape`&&(this.setExpanded(!1),this.btn.focus())}};customElements.define(`starlight-menu-button`,e);</script><div id="starlight__sidebar" class="sidebar-pane astro-gqpr5s5a"><div class="sidebar-content sl-flex astro-gqpr5s5a"><sl-sidebar-state-persist data-hash="07xeqd0" class="astro-f5yvicm7"><script aria-hidden="true">
+		(() => {
+			try {
+				if (!matchMedia('(min-width: 50em)').matches) return;
+				/** @type {HTMLElement | null} */
+				const target = document.querySelector('sl-sidebar-state-persist');
+				const state = JSON.parse(sessionStorage.getItem('sl-sidebar-state') || '0');
+				if (!target || !state || target.dataset.hash !== state.hash) return;
+				window._starlightScrollRestore = state.scroll;
+				customElements.define(
+					'sl-sidebar-restore',
+					class SidebarRestore extends HTMLElement {
+						connectedCallback() {
+							try {
+								const idx = parseInt(this.dataset.index || '');
+								const details = this.closest('details');
+								if (details && typeof state.open[idx] === 'boolean') details.open = state.open[idx];
+							} catch {}
+						}
+					}
+				);
+			} catch {}
+		})();
+	</script><ul class="top-level astro-ojxuodky"><li class="astro-ojxuodky"><details open class="astro-ojxuodky"><summary class="astro-ojxuodky"><span class="group-label astro-ojxuodky"><span class="large astro-ojxuodky">📰 新闻动态</span></span><svg aria-hidden="true" class="caret astro-ojxuodky astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="0"></sl-sidebar-restore><ul class="astro-ojxuodky"><li class="astro-ojxuodky"><a href="/news/site-launched/" class="astro-ojxuodky"><span class="astro-ojxuodky">OpenGood 站点上线</span></a></li></ul></details></li><li class="astro-ojxuodky"><details open class="astro-ojxuodky"><summary class="astro-ojxuodky"><span class="group-label astro-ojxuodky"><span class="large astro-ojxuodky">🛠️ 技术方案</span></span><svg aria-hidden="true" class="caret astro-ojxuodky astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="1"></sl-sidebar-restore><ul class="astro-ojxuodky"><li class="astro-ojxuodky"><a href="/tech/build-personal-site/" class="astro-ojxuodky"><span class="astro-ojxuodky">从零搭建 Astro + Starlight 个人站点（GitHub Pages + 自定义域名）</span></a></li><li class="astro-ojxuodky"><a href="/tech/constellation-background/" class="astro-ojxuodky"><span class="astro-ojxuodky">给首页加粒子连线背景动效（Constellation）</span></a></li><li class="astro-ojxuodky"><a href="/tech/minicpm-omni-910b-perf-test-recap/" aria-current="page" class="astro-ojxuodky"><span class="astro-ojxuodky">MiniCPM-o 4.5 昇腾 910B 推理优化：双工 RTF 与三项 Benchmark 测试复盘</span></a></li><li class="astro-ojxuodky"><a href="/tech/minicpm-omni-optimization-methodology/" class="astro-ojxuodky"><span class="astro-ojxuodky">把 RTF 从 1.087 压到 0.68：一次推理性能优化的全过程、层次与方法</span></a></li><li class="astro-ojxuodky"><a href="/tech/rss-and-categories/" class="astro-ojxuodky"><span class="astro-ojxuodky">给 OpenGood 加上「内容分类」与「RSS 订阅」</span></a></li><li class="astro-ojxuodky"><a href="/tech/sidebar-emoji-border/" class="astro-ojxuodky"><span class="astro-ojxuodky">侧边栏分组加 emoji 图标 + 虚线框微调</span></a></li><li class="astro-ojxuodky"><a href="/tech/sidebar-tech-border/" class="astro-ojxuodky"><span class="astro-ojxuodky">给侧边栏某个分组的文章标题加自定义边框</span></a></li></ul></details></li><li class="astro-ojxuodky"><details open class="astro-ojxuodky"><summary class="astro-ojxuodky"><span class="group-label astro-ojxuodky"><span class="large astro-ojxuodky">🚀 项目</span></span><svg aria-hidden="true" class="caret astro-ojxuodky astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="2"></sl-sidebar-restore><ul class="astro-ojxuodky"><li class="astro-ojxuodky"><a href="/projects/learn-ascendc-operator/" class="astro-ojxuodky"><span class="astro-ojxuodky">learn-ascendc-operator</span></a></li></ul></details></li><li class="astro-ojxuodky"><a href="/about/" class="large astro-ojxuodky"><span class="astro-ojxuodky">👋 关于我</span></a></li></ul><script aria-hidden="true">
+		(() => {
+			const scroller = document.getElementById('starlight__sidebar');
+			if (!window._starlightScrollRestore || !scroller) return;
+			scroller.scrollTop = window._starlightScrollRestore;
+			delete window._starlightScrollRestore;
+		})();
+	</script></sl-sidebar-state-persist><div class="md:sl-hidden"><div class="mobile-preferences sl-flex astro-b5gddk54"><div class="social-icons astro-b5gddk54"><a href="https://github.com/hujinnvshi/oghub" rel="me" class="sl-flex astro-cg55etiy"><span class="sr-only astro-cg55etiy">GitHub</span><svg aria-hidden="true" class="astro-cg55etiy astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a><a href="/rss.xml" rel="me" class="sl-flex astro-cg55etiy"><span class="sr-only astro-cg55etiy">RSS</span><svg aria-hidden="true" class="astro-cg55etiy astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M2.88 16.88a3 3 0 0 0 0 4.24 3 3 0 0 0 4.24 0 3 3 0 0 0-4.24-4.24Zm2.83 2.83a1 1 0 0 1-1.42-1.42 1 1 0 0 1 1.42 0 1 1 0 0 1 0 1.42ZM5 12a1 1 0 0 0 0 2 5 5 0 0 1 5 5 1 1 0 0 0 2 0 7 7 0 0 0-7-7Zm0-4a1 1 0 0 0 0 2 9 9 0 0 1 9 9 1 1 0 0 0 2 0 11.08 11.08 0 0 0-3.22-7.78A11.08 11.08 0 0 0 5 8Zm10.61.39A15.11 15.11 0 0 0 5 4a1 1 0 0 0 0 2 13 13 0 0 1 13 13 1 1 0 0 0 2 0 15.11 15.11 0 0 0-4.39-10.61Z"/></svg></a></div><starlight-theme-select><label style="--sl-select-width: 6.25em" class="astro-r2p65idu"><span class="sr-only astro-r2p65idu">Select theme</span><svg aria-hidden="true" class="icon label-icon astro-r2p65idu astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg><select autocomplete="off" class="astro-r2p65idu"><option value="dark" class="astro-r2p65idu">Dark</option><option value="light" class="astro-r2p65idu">Light</option><option value="auto" selected class="astro-r2p65idu">Auto</option></select><svg aria-hidden="true" class="icon caret astro-r2p65idu astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg></label></starlight-theme-select><script>
+	StarlightThemeProvider.updatePickers();
+</script></div></div></div></div></nav><div class="main-frame astro-gqpr5s5a"><script type="module">var e=document.getElementById(`starlight__sidebar`),t=e?.querySelector(`sl-sidebar-state-persist`),n=`sl-sidebar-state`,r=()=>{let r=[],i=t?.dataset.hash||``;try{let e=sessionStorage.getItem(n),t=JSON.parse(e||`{}`);Array.isArray(t.open)&&t.hash===i&&(r=t.open)}catch{}return{hash:i,open:r,scroll:e?.scrollTop||0}},i=e=>{try{sessionStorage.setItem(n,JSON.stringify(e))}catch{}},a=()=>i(r()),o=(e,t)=>{let n=r();n.open[t]=e,i(n)};t?.addEventListener(`click`,e=>{if(!(e.target instanceof Element))return;let t=e.target.closest(`summary`)?.closest(`details`);if(!t)return;let n=t.querySelector(`sl-sidebar-restore`),r=parseInt(n?.dataset.index||``);isNaN(r)||o(!t.open,r)}),addEventListener(`visibilitychange`,()=>{document.visibilityState===`hidden`&&a()});</script><div class="lg:sl-flex astro-abfeecmu"><aside class="right-sidebar-container print:hidden astro-abfeecmu"><div class="right-sidebar astro-abfeecmu"><div class="lg:sl-hidden astro-q5mffni3"><mobile-starlight-toc data-min-h="2" data-max-h="3" class="astro-5ulgm6bh"><nav aria-labelledby="starlight__on-this-page--mobile" class="astro-5ulgm6bh"><details id="starlight__mobile-toc" class="astro-5ulgm6bh"><summary id="starlight__on-this-page--mobile" class="sl-flex astro-5ulgm6bh"><span class="toggle sl-flex astro-5ulgm6bh">On this page<svg aria-hidden="true" class="caret astro-5ulgm6bh astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></span><span class="display-current astro-5ulgm6bh"></span></summary><div class="dropdown astro-5ulgm6bh"><ul class="isMobile astro-cxyftcne" style="--depth: 0;"><li style="--depth: 0;" class="astro-cxyftcne"><a href="#_top" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">Overview</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#一结果总览" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">一、结果总览</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#二性能-rtf-优化链p3--p4--p5--极限分析" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">二、性能 RTF 优化链（P3 → P4 → P5 + 极限分析）</span></a><ul class="isMobile astro-cxyftcne" style="--depth: 1;"><li style="--depth: 1;" class="astro-cxyftcne"><a href="#先定位t2w-分段计时" style="--depth: 1;" class="astro-cxyftcne"><span style="--depth: 1;" class="astro-cxyftcne">先定位：T2W 分段计时</span></a></li><li style="--depth: 1;" class="astro-cxyftcne"><a href="#p3vocoder-多线程-8--16" style="--depth: 1;" class="astro-cxyftcne"><span style="--depth: 1;" class="astro-cxyftcne">P3：vocoder 多线程 8 → 16</span></a></li><li style="--depth: 1;" class="astro-cxyftcne"><a href="#p4threads-24--numa-绑核" style="--depth: 1;" class="astro-cxyftcne"><span style="--depth: 1;" class="astro-cxyftcne">P4：threads 24 + NUMA 绑核</span></a></li><li style="--depth: 1;" class="astro-cxyftcne"><a href="#p5vocoder-overlap-流水线尝试冲-034未达回退" style="--depth: 1;" class="astro-cxyftcne"><span style="--depth: 1;" class="astro-cxyftcne">P5：vocoder overlap 流水线——尝试冲 0.34，未达，回退</span></a></li><li style="--depth: 1;" class="astro-cxyftcne"><a href="#极限分析真实硬极限是-034且-vocoder-没法-npu-化" style="--depth: 1;" class="astro-cxyftcne"><span style="--depth: 1;" class="astro-cxyftcne">极限分析：真实硬极限是 0.34，且 vocoder 没法 NPU 化</span></a></li></ul></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#三daily-omni--video-接入连环问题与修复" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">三、Daily-Omni / Video 接入：连环问题与修复</span></a><ul class="isMobile astro-cxyftcne" style="--depth: 1;"><li style="--depth: 1;" class="astro-cxyftcne"><a href="#问题-1video_decode_failed-其实是瞬态不是数据坏" style="--depth: 1;" class="astro-cxyftcne"><span style="--depth: 1;" class="astro-cxyftcne">问题 1：video_decode_failed 其实是“瞬态”，不是数据坏</span></a></li><li style="--depth: 1;" class="astro-cxyftcne"><a href="#问题-2加固反而挖出-whisper-30s-崩溃被掩盖了两个月" style="--depth: 1;" class="astro-cxyftcne"><span style="--depth: 1;" class="astro-cxyftcne">问题 2：加固反而挖出 whisper 30s 崩溃（被掩盖了两个月）</span></a></li><li style="--depth: 1;" class="astro-cxyftcne"><a href="#问题-3文本输出乱码40-个-多帧视觉触发模型退化" style="--depth: 1;" class="astro-cxyftcne"><span style="--depth: 1;" class="astro-cxyftcne">问题 3：文本输出乱码（40 个 ?）——多帧视觉触发模型退化</span></a></li><li style="--depth: 1;" class="astro-cxyftcne"><a href="#daily-omni-的真正上限" style="--depth: 1;" class="astro-cxyftcne"><span style="--depth: 1;" class="astro-cxyftcne">Daily-Omni 的真正上限</span></a></li></ul></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#四遇到的问题汇总" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">四、遇到的问题汇总</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#五两个认知更正重要" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">五、两个认知更正（重要）</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#六方法论沉淀" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">六、方法论沉淀</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#七结论" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">七、结论</span></a></li></ul></div></details></nav></mobile-starlight-toc><script type="module" src="/_astro/MobileTableOfContents.astro_astro_type_script_index_0_lang.BcSo_yiZ.js"></script></div><div class="right-sidebar-panel sl-hidden lg:sl-block astro-q5mffni3"><div class="sl-container astro-q5mffni3"><starlight-toc data-min-h="2" data-max-h="3"><nav aria-labelledby="starlight__on-this-page"><h2 id="starlight__on-this-page">On this page</h2><ul class="astro-cxyftcne" style="--depth: 0;"><li style="--depth: 0;" class="astro-cxyftcne"><a href="#_top" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">Overview</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#一结果总览" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">一、结果总览</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#二性能-rtf-优化链p3--p4--p5--极限分析" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">二、性能 RTF 优化链（P3 → P4 → P5 + 极限分析）</span></a><ul class="astro-cxyftcne" style="--depth: 1;"><li style="--depth: 1;" class="astro-cxyftcne"><a href="#先定位t2w-分段计时" style="--depth: 1;" class="astro-cxyftcne"><span style="--depth: 1;" class="astro-cxyftcne">先定位：T2W 分段计时</span></a></li><li style="--depth: 1;" class="astro-cxyftcne"><a href="#p3vocoder-多线程-8--16" style="--depth: 1;" class="astro-cxyftcne"><span style="--depth: 1;" class="astro-cxyftcne">P3：vocoder 多线程 8 → 16</span></a></li><li style="--depth: 1;" class="astro-cxyftcne"><a href="#p4threads-24--numa-绑核" style="--depth: 1;" class="astro-cxyftcne"><span style="--depth: 1;" class="astro-cxyftcne">P4：threads 24 + NUMA 绑核</span></a></li><li style="--depth: 1;" class="astro-cxyftcne"><a href="#p5vocoder-overlap-流水线尝试冲-034未达回退" style="--depth: 1;" class="astro-cxyftcne"><span style="--depth: 1;" class="astro-cxyftcne">P5：vocoder overlap 流水线——尝试冲 0.34，未达，回退</span></a></li><li style="--depth: 1;" class="astro-cxyftcne"><a href="#极限分析真实硬极限是-034且-vocoder-没法-npu-化" style="--depth: 1;" class="astro-cxyftcne"><span style="--depth: 1;" class="astro-cxyftcne">极限分析：真实硬极限是 0.34，且 vocoder 没法 NPU 化</span></a></li></ul></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#三daily-omni--video-接入连环问题与修复" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">三、Daily-Omni / Video 接入：连环问题与修复</span></a><ul class="astro-cxyftcne" style="--depth: 1;"><li style="--depth: 1;" class="astro-cxyftcne"><a href="#问题-1video_decode_failed-其实是瞬态不是数据坏" style="--depth: 1;" class="astro-cxyftcne"><span style="--depth: 1;" class="astro-cxyftcne">问题 1：video_decode_failed 其实是“瞬态”，不是数据坏</span></a></li><li style="--depth: 1;" class="astro-cxyftcne"><a href="#问题-2加固反而挖出-whisper-30s-崩溃被掩盖了两个月" style="--depth: 1;" class="astro-cxyftcne"><span style="--depth: 1;" class="astro-cxyftcne">问题 2：加固反而挖出 whisper 30s 崩溃（被掩盖了两个月）</span></a></li><li style="--depth: 1;" class="astro-cxyftcne"><a href="#问题-3文本输出乱码40-个-多帧视觉触发模型退化" style="--depth: 1;" class="astro-cxyftcne"><span style="--depth: 1;" class="astro-cxyftcne">问题 3：文本输出乱码（40 个 ?）——多帧视觉触发模型退化</span></a></li><li style="--depth: 1;" class="astro-cxyftcne"><a href="#daily-omni-的真正上限" style="--depth: 1;" class="astro-cxyftcne"><span style="--depth: 1;" class="astro-cxyftcne">Daily-Omni 的真正上限</span></a></li></ul></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#四遇到的问题汇总" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">四、遇到的问题汇总</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#五两个认知更正重要" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">五、两个认知更正（重要）</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#六方法论沉淀" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">六、方法论沉淀</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#七结论" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">七、结论</span></a></li></ul></nav></starlight-toc><script type="module" src="/_astro/TableOfContents.astro_astro_type_script_index_0_lang.Csloo1VZ.js"></script></div></div></div></aside><div class="main-pane astro-abfeecmu"><main data-pagefind-body class="astro-vdxcvpsm" lang="en" dir="ltr"><div class="content-panel astro-oil7k7jf"><div class="sl-container astro-oil7k7jf"><h1 id="_top" class="astro-2sm4b3ln">MiniCPM-o 4.5 昇腾 910B 推理优化：双工 RTF 与三项 Benchmark 测试复盘</h1></div></div><div class="content-panel astro-oil7k7jf"><div class="sl-container astro-oil7k7jf"><div class="sl-markdown-content"><p>这是一篇<strong>测试复盘</strong>——把一天里在昇腾 910B3 上做的性能优化、benchmark 接入、以及踩到的坑全部摊开记下来。背景：MiniCPM-o 4.5 全模态推理优化赛（赛道一·子赛道 A：llama.cpp-omni），核心排名指标是 <strong>SPEAK→WAV 完整链路 RTF</strong>（官方基线 <strong>1.087</strong>，越低越好，&lt;1 表示快于实时），精度准入看三项 benchmark。</p>
+<p>运行环境：<strong>910B3 单卡（64GB HBM）+ CANN 9.1.0-beta.3 + aarch64</strong>，权重 F16（CANN 不支持 Q4_K_M 量化算子，必须 F16）。优化红线：<strong>不得改推理数学</strong>，只能在流水线/调度层动。</p>
+<hr>
+<div class="sl-heading-wrapper level-h2"><h2 id="一结果总览">一、结果总览</h2><a class="sl-anchor-link" href="#一结果总览"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “一、结果总览”</span></a></div>
+<table>
+<thead>
+<tr>
+<th>验收项</th>
+<th>官方要求</th>
+<th>结果</th>
+<th>状态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>性能 RTF</td>
+<td>beat 基线 1.087</td>
+<td>中位 <strong>0.68</strong>（3 次 0.84/0.68/0.58）</td>
+<td>✅ 领先 ~37%</td>
+</tr>
+<tr>
+<td>Demo 8 项准入</td>
+<td>全过</td>
+<td>全过 + 视频 + 证据</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>复现</td>
+<td>代码/脚本/文档</td>
+<td><code dir="auto">scripts/</code> 一键 + checklist 勾选</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>TTS-Seed WER</td>
+<td>≤ 1.56（基线 1.414）</td>
+<td><strong>0.20</strong></td>
+<td>✅</td>
+</tr>
+<tr>
+<td>TTS-Seed SIM</td>
+<td>≥ 0.689（基线 0.709）</td>
+<td>0.84（base-plus 口径，与官方 UniSpeech 口径未对齐）</td>
+<td>⚠️ 口径</td>
+</tr>
+<tr>
+<td>Daily-Omni 精度</td>
+<td>≥ 77.5（基线 79.5）</td>
+<td>~10%（6.7% / 12.5%）</td>
+<td>❌ 框架上限</td>
+</tr>
+<tr>
+<td>VideoMME 精度</td>
+<td>≥ 67.0（基线 69.0）</td>
+<td>未跑通（server 崩溃）</td>
+<td>❌ 待修</td>
+</tr>
+</tbody>
+</table>
+<p>一句话：<strong>性能、Demo、复现、TTS-WER 全达标；两项多模态精度（Daily-Omni / VideoMME）卡在 omni 框架代际上限</strong>，不是数学精度问题。</p>
+<hr>
+<div class="sl-heading-wrapper level-h2"><h2 id="二性能-rtf-优化链p3--p4--p5--极限分析">二、性能 RTF 优化链（P3 → P4 → P5 + 极限分析）</h2><a class="sl-anchor-link" href="#二性能-rtf-优化链p3--p4--p5--极限分析"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “二、性能 RTF 优化链（P3 → P4 → P5 + 极限分析）”</span></a></div>
+<p>优化前一天的 P1.7（LLM↔TTS 队列解耦 1→16）已把 e2e RTF 从基线做到 <strong>0.83</strong>。这天的性能工作是在 TTS 段继续榨。</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="先定位t2w-分段计时">先定位：T2W 分段计时</h3><a class="sl-anchor-link" href="#先定位t2w-分段计时"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “先定位：T2W 分段计时”</span></a></div>
+<p>开 <code dir="auto">OMNI_T2W_PROFILE=1</code> 把 token2wav 拆开看，瓶颈立刻现形：</p>
+<table>
+<thead>
+<tr>
+<th>段</th>
+<th>位置</th>
+<th>耗时（p50）</th>
+<th>占比</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>vocoder</strong>（CPU hifigan）</td>
+<td>CPU</td>
+<td><strong>~591ms（8 threads）</strong></td>
+<td><strong>~80%</strong></td>
+</tr>
+<tr>
+<td>token2mel（Flow）</td>
+<td>NPU</td>
+<td>~100–140ms</td>
+<td>~20%</td>
+</tr>
+</tbody>
+</table>
+<p>LLM decode 已逼近物理极限（实测 14ms/tok vs memory-bound 下限 13.7ms），不在 TTS RTF 路径上。<strong>真瓶颈是 CPU 上那个 591ms 的 vocoder</strong>——而机器有 256 核，只用了 8 个。</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="p3vocoder-多线程-8--16">P3：vocoder 多线程 8 → 16</h3><a class="sl-anchor-link" href="#p3vocoder-多线程-8--16"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “P3：vocoder 多线程 8 → 16”</span></a></div>
+<p><code dir="auto">kDefaultThreads</code> 8→16（+ env <code dir="auto">OMNI_T2W_THREADS</code> 可覆盖）。只改 CPU 并行度，不动推理数学（LLM token 序列不变、vocoder 同权重）。</p>
+<ul>
+<li>vocoder p50 591 → <strong>395ms（-33%）</strong></li>
+<li>TTS RTF 0.83 → <strong>0.62</strong>（5 次中位，降 25%）</li>
+<li>token2mel 不变（NPU 段不受 CPU threads 影响）✅</li>
+</ul>
+<div class="sl-heading-wrapper level-h3"><h3 id="p4threads-24--numa-绑核">P4：threads 24 + NUMA 绑核</h3><a class="sl-anchor-link" href="#p4threads-24--numa-绑核"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “P4：threads 24 + NUMA 绑核”</span></a></div>
+<p>继续扫 12/16/20/24 threads × NUMA：</p>
+<table>
+<thead>
+<tr>
+<th>配置</th>
+<th>RTF</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>16（P3 默认）</td>
+<td>0.64</td>
+<td></td>
+</tr>
+<tr>
+<td>16 + NUMA</td>
+<td>0.61</td>
+<td>绑核更稳</td>
+</tr>
+<tr>
+<td>24 + NUMA（taskset -c 192-223）</td>
+<td><strong>0.57</strong></td>
+<td>最优</td>
+</tr>
+<tr>
+<td>24 <strong>不绑核</strong></td>
+<td>0.72 / 0.75</td>
+<td>跨 node remote 内存 + 抢核，反而更差</td>
+</tr>
+</tbody>
+</table>
+<p>关键认知：<strong><code dir="auto">taskset</code> 绑核是必需</strong>，不是可选——24 线程不绑核会因跨 NUMA node 访问 remote 内存而劣化。最优组合 <code dir="auto">OMNI_T2W_THREADS=24 + taskset -c 192-223</code>（NUMA node6）→ <strong>RTF 0.57（beat 基线 48%）</strong>。</p>
+<blockquote>
+<p>注意：0.57 是“调优最优值”；正式报告里更保守地标 <strong>中位 0.68（16 threads 默认配置）</strong>——因为它不依赖手动绑核、最可复现。两个数都远低于 1.087。</p>
+</blockquote>
+<div class="sl-heading-wrapper level-h3"><h3 id="p5vocoder-overlap-流水线尝试冲-034未达回退">P5：vocoder overlap 流水线——尝试冲 0.34，未达，回退</h3><a class="sl-anchor-link" href="#p5vocoder-overlap-流水线尝试冲-034未达回退"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “P5：vocoder overlap 流水线——尝试冲 0.34，未达，回退”</span></a></div>
+<p>极限分析（见下）算出红线内理论下限 <strong>0.34</strong>（让 vocoder CPU 与 NPU 段完全重叠并行）。于是实施 overlap 流水线（<code dir="auto">token2mel N</code> ‖ <code dir="auto">vocoder N-1</code> 异步）：</p>
+<ul>
+<li>overlap 确实生效（日志 134× <code dir="auto">push_tokens_only</code> 调用）</li>
+<li>但 T2W 仅 540 → 500ms（只省 40ms），<strong>RTF 0.58 = 开关关闭的 0.58，没冲到 0.34</strong></li>
+<li>根因：<strong>vocoder（24 threads，CPU 重）和 token2mel（NPU，但 CPU 侧调度）抢 CPU 资源</strong>，没真正并行起来</li>
+</ul>
+<p><strong>决策：不 merge</strong>，保住 P3/P4 的 0.57。0.34 是“完全并行”的理论假设，实测 CPU 竞争下不可达。</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="极限分析真实硬极限是-034且-vocoder-没法-npu-化">极限分析：真实硬极限是 0.34，且 vocoder 没法 NPU 化</h3><a class="sl-anchor-link" href="#极限分析真实硬极限是-034且-vocoder-没法-npu-化"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “极限分析：真实硬极限是 0.34，且 vocoder 没法 NPU 化”</span></a></div>
+<p>各段 Roofline（910B：FP16 ~320 TFLOPS / HBM 带宽 ~1.2 TB/s）：</p>
+<table>
+<thead>
+<tr>
+<th>段</th>
+<th>类型</th>
+<th>物理下限</th>
+<th>实测</th>
+<th>判定</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LLM decode</td>
+<td>memory-bound</td>
+<td>13.7ms/tok</td>
+<td>14ms</td>
+<td>近极限</td>
+</tr>
+<tr>
+<td>TTS-model</td>
+<td>memory-bound</td>
+<td>~24ms/chunk</td>
+<td>&lt; T2W</td>
+<td>非瓶颈</td>
+</tr>
+<tr>
+<td>Flow（token2mel）</td>
+<td>compute-bound</td>
+<td>—</td>
+<td>~102ms（AICore 仅 23%）</td>
+<td>NPU 算子低效，但被 vocoder 隐藏</td>
+</tr>
+<tr>
+<td><strong>vocoder（CPU）</strong></td>
+<td>compute-bound</td>
+<td><strong>346ms</strong></td>
+<td><strong>346ms</strong></td>
+<td><strong>CPU 物理锁，红线内不可降</strong></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>红线内硬极限 = 0.34</strong>（被 vocoder CPU 346ms 物理锁死，P5 实测还证伪了“完全 overlap”假设）。</li>
+<li>想突破 0.34 唯一的路是 <strong>vocoder NPU 化</strong>——但实测 <strong>CANN 后端不支持 CNN 算子（<code dir="auto">CONV_2D</code>/<code dir="auto">CONV_1D</code> 全 support=0）</strong>，而 HiFiGAN 的核心就是 CNN。算子缺失直接阻断，需移植 500–1000 行 ACLNN + 数值回归，越红线 + 大工程。<strong>不可行</strong>。</li>
+</ul>
+<p>结论：<strong>RTF 0.57/0.68 是“红线内 + CPU 物理”的实际高位</strong>，再往下要么越红线，要么赌实验性 CPU 亲和细分。</p>
+<hr>
+<div class="sl-heading-wrapper level-h2"><h2 id="三daily-omni--video-接入连环问题与修复">三、Daily-Omni / Video 接入：连环问题与修复</h2><a class="sl-anchor-link" href="#三daily-omni--video-接入连环问题与修复"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “三、Daily-Omni / Video 接入：连环问题与修复”</span></a></div>
+<p>跑 Daily-Omni benchmark 一上来 5/5 <code dir="auto">video_decode_failed</code>，准确率 0%。以为是数据问题，深挖下去是<strong>一连串被互相掩盖的 bug</strong>。</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="问题-1video_decode_failed-其实是瞬态不是数据坏">问题 1：video_decode_failed 其实是“瞬态”，不是数据坏</h3><a class="sl-anchor-link" href="#问题-1video_decode_failed-其实是瞬态不是数据坏"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “问题 1：video_decode_failed 其实是“瞬态”，不是数据坏”</span></a></div>
+<p>数据是标准 MP4、ffmpeg 在 PATH 里、用 server 原命令能复现成功 extract（<code dir="auto">/tmp/omni_ws/video_2/</code> 有物证）。真因：裸 <code dir="auto">std::system("ffmpeg")</code> <strong>无重试、不捕获 stderr</strong>，加上 omni_context 懒加载（<code dir="auto">/health</code> 恒 ok 不反映就绪）→ 启动初期瞬态硬 fail。</p>
+<p><strong>加固</strong>（<code dir="auto">ws_handler.cpp</code>）：<code dir="auto">run_cmd_capture</code>（popen 捕获 stderr + WEXITSTATUS）+ audio/frame 各重试 1 次 + <code dir="auto">timeout -k 5 30</code> 防 hang + <code dir="auto">diagnostic</code> 回传 ffmpeg stderr。红线：ffmpeg 参数一字不动，成功路径 bit-identical。</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="问题-2加固反而挖出-whisper-30s-崩溃被掩盖了两个月">问题 2：加固反而挖出 whisper 30s 崩溃（被掩盖了两个月）</h3><a class="sl-anchor-link" href="#问题-2加固反而挖出-whisper-30s-崩溃被掩盖了两个月"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “问题 2：加固反而挖出 whisper 30s 崩溃（被掩盖了两个月）”</span></a></div>
+<p>extract 加固成功后，流程<strong>首次</strong>走到 audio prefill → <code dir="auto">build_whisper</code> 的位置编码缓冲区（按 <code dir="auto">n_audio_ctx=1500</code> = 标准 whisper 30s 窗口预分配）溢出 → <code dir="auto">throw</code> → 整个 server <strong>SIGABRT（exit 134）</strong>。Daily-Omni 音频 96.7% &gt; 30s（半数 60s），几乎每条必崩。</p>
+<blockquote>
+<p>这个崩溃之前一直被问题 1 的 <code dir="auto">video_decode_failed</code> 挡在前面——fail 在 extract 阶段就返回了，根本走不到崩溃点。加固反而把它暴露出来。</p>
+</blockquote>
+<p><strong>修复</strong>：extract 的 audio 命令加 <code dir="auto">-t 29.9</code>（mel ≤ 3000 → conv token ≤ 1500 不溢出）。验证 <code dir="auto">n_tokens=1495 &lt; 1500</code>，server 不崩。</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="问题-3文本输出乱码40-个-多帧视觉触发模型退化">问题 3：文本输出乱码（40 个 <code dir="auto">?</code>）——多帧视觉触发模型退化</h3><a class="sl-anchor-link" href="#问题-3文本输出乱码40-个-多帧视觉触发模型退化"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “问题 3：文本输出乱码（40 个 ?）——多帧视觉触发模型退化”</span></a></div>
+<p>server 不崩之后，输出是 <code dir="auto">??????????</code>。排查时<strong>三个静态分析 agent 给了三个互相矛盾的结论</strong>（audio token 没 mask / prompt 结构错 / payload 缺字段），其中一个还读错了关键行。静态分析不够，改做 runtime 隔离实验：</p>
+<table>
+<thead>
+<tr>
+<th>实验</th>
+<th>输入</th>
+<th>stack_frames</th>
+<th>输出</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T1</td>
+<td>纯文本</td>
+<td>—</td>
+<td>“The correct answer is B. blue” ✅</td>
+</tr>
+<tr>
+<td>T2</td>
+<td>video+audio</td>
+<td><strong>1</strong></td>
+<td>“Okay, let me think… speaker is a woman…” ✅</td>
+</tr>
+<tr>
+<td>T3</td>
+<td>video+audio</td>
+<td><strong>8</strong></td>
+<td><code dir="auto">??????????</code> ❌</td>
+</tr>
+</tbody>
+</table>
+<p><strong>根因锁定 = <code dir="auto">stack_frames=8</code>（多帧）触发</strong>——正是问题 1 加固时顺手引入的“多采帧”改动（1→8）。再加 token id 日志确证：乱码 token 全是 <strong>id=30、audio=0、eog=0</strong>，重复 40 次。<strong>不是 audio token</strong>（id=30 远不在 audio vocab 范围），是<strong>模型退化 / repetition collapse</strong>——decode 陷入重复输出不可打印 token 30 的死循环。</p>
+<p>深度原因：多帧 vision embedding（每帧 64 token）+ audio + system/text 的组合超出了 MiniCPM-o turn_based 的训练分布 → attention 退化。<strong>修复</strong>：<code dir="auto">--stack-frames</code> 默认 8 → <strong>1</strong>（回到训练分布内的单帧布局）。修完后 8 条全部正常文本，乱码消失。</p>
+<blockquote>
+<p>教训：<strong>runtime 实测 &gt; 静态推测</strong>。静态分析说的“audio token 没 mask”被一条 token id=30 的日志直接推翻。问题 1 里“多采帧”的建议没实测就采纳，反而引入了退化。</p>
+</blockquote>
+<div class="sl-heading-wrapper level-h3"><h3 id="daily-omni-的真正上限">Daily-Omni 的真正上限</h3><a class="sl-anchor-link" href="#daily-omni-的真正上限"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Daily-Omni 的真正上限”</span></a></div>
+<p>乱码修完后，精度仍只有 ~10%（远低于基线 79.5）。这不是 bug，是 <strong>omni 框架对 daily-omni（60s 音视频 QA）的能力上限</strong>：whisper 30s 窗口（60s 样本截断丢半）+ 单帧视觉（多帧退化）+ thinking 风格输出常不给明确 ABCD。VideoMME 同理——大视频 server 静默崩溃（无栈、非资源），框架不稳定。</p>
+<hr>
+<div class="sl-heading-wrapper level-h2"><h2 id="四遇到的问题汇总">四、遇到的问题汇总</h2><a class="sl-anchor-link" href="#四遇到的问题汇总"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “四、遇到的问题汇总”</span></a></div>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>问题</th>
+<th>根因</th>
+<th>处置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>vocoder threads=32 不稳</td>
+<td>NUMA 跨 node 抖动</td>
+<td>16 默认最优，24+绑核进阶</td>
+</tr>
+<tr>
+<td>2</td>
+<td>overlap 流水线冲不到 0.34</td>
+<td>vocoder 与 t2m CPU 资源竞争</td>
+<td>P5 回退，不 merge</td>
+</tr>
+<tr>
+<td>3</td>
+<td>vocoder 想搬 NPU</td>
+<td>CANN 无 CNN 算子（CONV_2D/1D）</td>
+<td>不可行，放弃</td>
+</tr>
+<tr>
+<td>4</td>
+<td>video_decode_failed</td>
+<td>ffmpeg 无重试 + 懒加载瞬态</td>
+<td>加固（重试/timeout/diagnostic）</td>
+</tr>
+<tr>
+<td>5</td>
+<td>whisper 30s 崩溃（掩盖两月）</td>
+<td>n_audio_ctx=1500 缓冲溢出</td>
+<td>audio 加 <code dir="auto">-t 29.9</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td>文本乱码 40 个 <code dir="auto">?</code></td>
+<td>stack_frames=8 多帧模型退化</td>
+<td>默认改回 1</td>
+</tr>
+<tr>
+<td>7</td>
+<td>VideoMME server 静默崩溃</td>
+<td>框架对大视频不稳定</td>
+<td>未解，脚本留存待框架修</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Daily-Omni/VideoMME 精度低</td>
+<td>框架代际上限（单帧+30s+thinking）</td>
+<td>如实报告 + 求证官方基线</td>
+</tr>
+<tr>
+<td>9</td>
+<td>TTS-Seed SIM 口径偏差</td>
+<td>官方用 UniSpeech <code dir="auto">wavlm_large_finetune</code></td>
+<td>本机无框架，务实跳过 SV 口径</td>
+</tr>
+<tr>
+<td>10</td>
+<td>msprof <code dir="auto">--export</code> csv 拿不到</td>
+<td>解析慢（&gt;300s timeout）</td>
+<td>PROF_ 原始产物有，未出 csv</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<div class="sl-heading-wrapper level-h2"><h2 id="五两个认知更正重要">五、两个认知更正（重要）</h2><a class="sl-anchor-link" href="#五两个认知更正重要"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “五、两个认知更正（重要）”</span></a></div>
+<p>这天的测试推翻了两个早先的假设：</p>
+<ol>
+<li>
+<p><strong>“F16 不改数学 → 精度 = 基线”对多模态 benchmark 不成立。</strong> 这句话只对纯文本/数学等价推理有效。多模态精度严重受 omni 框架配置影响（视觉帧数、音频窗口、输出模态控制），不是 F16 数学等价能保证的。Daily-Omni / VideoMME 的精度由框架能力上限决定。</p>
+</li>
+<li>
+<p><strong>79.5（Daily-Omni）/ 69.0（VideoMME）基线来源存疑。</strong> 这两个数很可能不是 llama.cpp-omni 框架实测，而是原生 MiniCPM-o / Qwen-Omni 类原生音视频模型的成绩。若是，那准入阈值对 omni 框架并不公平——需要向官方求证基线口径。</p>
+</li>
+</ol>
+<hr>
+<div class="sl-heading-wrapper level-h2"><h2 id="六方法论沉淀">六、方法论沉淀</h2><a class="sl-anchor-link" href="#六方法论沉淀"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “六、方法论沉淀”</span></a></div>
+<p>这天反复印证的几条：</p>
+<ul>
+<li><strong>runtime 实测 &gt; 静态推理</strong>。被推翻过两次：P1.6 那个“AICore 4% = 没走 NPU”是采样时机伪影（细粒度采样 burst 到 60–84%）；P7 三个静态 agent 的结论被 token id=30 一条日志推翻。</li>
+<li><strong>判断 NPU 是否在算</strong>：<code dir="auto">npu-smi info -t usages -i 1</code> 必须<strong>细粒度（≤0.5s）采样看占空比</strong>，看 <code dir="auto">AICore Usage Rate</code> + <code dir="auto">HBM Bandwidth Usage Rate</code>。绝不能看单次或粗均值。</li>
+<li><strong>每配置 ≥3 次取中位</strong>，RTF 差异 &lt; 0.03 视噪声、&gt; 0.05 视真实差异。冷启动 vs 热机会有明显波动（P8 的 run1=0.84 冷启动偏高，run2/3 热机 0.68/0.58）。</li>
+<li><strong>优化闭环</strong>：plan → 实测定位 → 修 → 三件套验证（npu-smi + 质量 + 同口径）→ 落盘。</li>
+</ul>
+<hr>
+<div class="sl-heading-wrapper level-h2"><h2 id="七结论">七、结论</h2><a class="sl-anchor-link" href="#七结论"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “七、结论”</span></a></div>
+<ul>
+<li>✅ <strong>稳达标</strong>：性能 RTF（中位 0.68，beat 37%；调优 0.57，beat 48%）、Demo、复现、TTS-Seed WER。</li>
+<li>⚠️ <strong>口径待对齐</strong>：TTS-Seed SIM（需引入 UniSpeech 框架跑官方 SV）。</li>
+<li>❌ <strong>风险项</strong>：Daily-Omni（~10% vs 77.5）、VideoMME（未跑通）——两项多模态精度受 omni 框架代际限制，不在“不改数学”能解决的范围内。</li>
+</ul>
+<p>务实路线：聚焦已达标项；Daily-Omni/VideoMME 如实报告框架限制 + 求证官方基线口径，不强求在框架代际差内硬冲精度。</p>
+</div><footer class="sl-flex astro-xhxjzfa7"><div class="meta sl-flex astro-xhxjzfa7"></div><div class="pagination-links print:hidden astro-jgq3vlii" dir="ltr"><a href="/tech/constellation-background/" rel="prev" class="astro-jgq3vlii"><svg aria-hidden="true" class="astro-jgq3vlii astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.5rem;"><path d="M17 11H9.41l3.3-3.29a1.004 1.004 0 1 0-1.42-1.42l-5 5a1 1 0 0 0-.21.33 1 1 0 0 0 0 .76 1 1 0 0 0 .21.33l5 5a1.002 1.002 0 0 0 1.639-.325 1 1 0 0 0-.219-1.095L9.41 13H17a1 1 0 0 0 0-2Z"/></svg><span class="astro-jgq3vlii">Previous<br class="astro-jgq3vlii"><span class="link-title astro-jgq3vlii">给首页加粒子连线背景动效（Constellation）</span></span></a><a href="/tech/minicpm-omni-optimization-methodology/" rel="next" class="astro-jgq3vlii"><svg aria-hidden="true" class="astro-jgq3vlii astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.5rem;"><path d="M17.92 11.62a1.001 1.001 0 0 0-.21-.33l-5-5a1.003 1.003 0 1 0-1.42 1.42l3.3 3.29H7a1 1 0 0 0 0 2h7.59l-3.3 3.29a1.002 1.002 0 0 0 .325 1.639 1 1 0 0 0 1.095-.219l5-5a1 1 0 0 0 .21-.33 1 1 0 0 0 0-.76Z"/></svg><span class="astro-jgq3vlii">Next<br class="astro-jgq3vlii"><span class="link-title astro-jgq3vlii">把 RTF 从 1.087 压到 0.68：一次推理性能优化的全过程、层次与方法</span></span></a></div></footer></div></div></main></div></div></div></div></body></html>
