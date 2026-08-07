@@ -1,3 +1,9 @@
+---
+title: 在昇腾 NPU 上使用 vllm-omni部署 MiniCPM-o 4.5
+description: 在昇腾 NPU 上用 vLLM-Omni 部署 MiniCPM-o 4.5（文本/图像/音频/视频理解 + 语音输出）。
+pubDate: 2026-08-07
+---
+
 # 在昇腾 NPU 上使用 vllm\-omni部署 MiniCPM\-o 4\.5
 
 本指南介绍如何在昇腾（Ascend）NPU 上用 vLLM\-Omni 部署 MiniCPM\-o 4\.5（文本 / 图像 / 音频 / 视频理解 \+ 语音输出）。

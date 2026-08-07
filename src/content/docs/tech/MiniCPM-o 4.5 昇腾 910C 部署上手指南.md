@@ -1,3 +1,9 @@
+---
+title: MiniCPM-o 4.5 昇腾 910C 部署上手指南
+description: MiniCPM-o 4.5 在昇腾 910C 上的部署上手步骤：环境前置检查到安装启动。
+pubDate: 2026-08-07
+---
+
 # MiniCPM\-o 4\.5 昇腾 910C 部署上手指南
 
 ## 1\. 环境说明与前置检查
