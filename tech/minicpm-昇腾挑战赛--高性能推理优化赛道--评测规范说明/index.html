@@ -1,0 +1,454 @@
+<!DOCTYPE html><html lang="en" dir="ltr" data-theme="dark" data-has-toc data-has-sidebar class="astro-vdxcvpsm"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>MiniCPM 昇腾挑战赛 · 高性能推理优化赛道 — 评测规范说明 | OpenGood</title><link rel="canonical" href="https://github.opengood.cc/tech/minicpm-%E6%98%87%E8%85%BE%E6%8C%91%E6%88%98%E8%B5%9B--%E9%AB%98%E6%80%A7%E8%83%BD%E6%8E%A8%E7%90%86%E4%BC%98%E5%8C%96%E8%B5%9B%E9%81%93--%E8%AF%84%E6%B5%8B%E8%A7%84%E8%8C%83%E8%AF%B4%E6%98%8E/"/><link rel="sitemap" href="/sitemap-index.xml"/><link rel="shortcut icon" href="/favicon.svg" type="image/svg+xml"/><meta name="generator" content="Astro v7.1.6"/><meta name="generator" content="Starlight v0.41.7"/><meta property="og:title" content="MiniCPM 昇腾挑战赛 · 高性能推理优化赛道 — 评测规范说明"/><meta property="og:type" content="article"/><meta property="og:url" content="https://github.opengood.cc/tech/minicpm-%E6%98%87%E8%85%BE%E6%8C%91%E6%88%98%E8%B5%9B--%E9%AB%98%E6%80%A7%E8%83%BD%E6%8E%A8%E7%90%86%E4%BC%98%E5%8C%96%E8%B5%9B%E9%81%93--%E8%AF%84%E6%B5%8B%E8%A7%84%E8%8C%83%E8%AF%B4%E6%98%8E/"/><meta property="og:locale" content="en"/><meta property="og:description" content="赛道一官方评测规范：各子赛道精度与性能 Baseline、Benchmark 评测方式及准入条件。"/><meta property="og:site_name" content="OpenGood"/><meta name="twitter:card" content="summary_large_image"/><meta name="description" content="赛道一官方评测规范：各子赛道精度与性能 Baseline、Benchmark 评测方式及准入条件。"/><link rel="alternate" type="application/rss+xml" title="OpenGood" href="/rss.xml"><script>
+	window.StarlightThemeProvider = (() => {
+		const storedTheme =
+			typeof localStorage !== 'undefined' && localStorage.getItem('starlight-theme');
+		const theme =
+			storedTheme ||
+			(window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+		document.documentElement.dataset.theme = theme === 'light' ? 'light' : 'dark';
+		return {
+			updatePickers(theme = storedTheme || 'auto') {
+				document.querySelectorAll('starlight-theme-select').forEach((picker) => {
+					const select = picker.querySelector('select');
+					if (select) select.value = theme;
+					/** @type {HTMLTemplateElement | null} */
+					const tmpl = document.querySelector(`#theme-icons`);
+					const newIcon = tmpl && tmpl.content.querySelector('.' + theme);
+					if (newIcon) {
+						const oldIcon = picker.querySelector('svg.label-icon');
+						if (oldIcon) {
+							oldIcon.replaceChildren(...newIcon.cloneNode(true).childNodes);
+						}
+					}
+				});
+			},
+		};
+	})();
+</script><template id="theme-icons"><svg aria-hidden="true" class="light astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M5 12a1 1 0 0 0-1-1H3a1 1 0 0 0 0 2h1a1 1 0 0 0 1-1Zm.64 5-.71.71a1 1 0 0 0 0 1.41 1 1 0 0 0 1.41 0l.71-.71A1 1 0 0 0 5.64 17ZM12 5a1 1 0 0 0 1-1V3a1 1 0 0 0-2 0v1a1 1 0 0 0 1 1Zm5.66 2.34a1 1 0 0 0 .7-.29l.71-.71a1 1 0 1 0-1.41-1.41l-.66.71a1 1 0 0 0 0 1.41 1 1 0 0 0 .66.29Zm-12-.29a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.71-.71a1.004 1.004 0 1 0-1.43 1.41l.73.71ZM21 11h-1a1 1 0 0 0 0 2h1a1 1 0 0 0 0-2Zm-2.64 6A1 1 0 0 0 17 18.36l.71.71a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.76-.66ZM12 6.5a5.5 5.5 0 1 0 5.5 5.5A5.51 5.51 0 0 0 12 6.5Zm0 9a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Zm0 3.5a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 0-1-1Z"/></svg><svg aria-hidden="true" class="dark astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.64 13a1 1 0 0 0-1.05-.14 8.049 8.049 0 0 1-3.37.73 8.15 8.15 0 0 1-8.14-8.1 8.59 8.59 0 0 1 .25-2A1 1 0 0 0 8 2.36a10.14 10.14 0 1 0 14 11.69 1 1 0 0 0-.36-1.05Zm-9.5 6.69A8.14 8.14 0 0 1 7.08 5.22v.27a10.15 10.15 0 0 0 10.14 10.14 9.784 9.784 0 0 0 2.1-.22 8.11 8.11 0 0 1-7.18 4.32v-.04Z"/></svg><svg aria-hidden="true" class="auto astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg></template><link rel="stylesheet" href="/_astro/print.ehPL0gv-.css" media="print"><link rel="stylesheet" href="/_astro/common.DJrPAfyb.css"><style>@layer starlight.components{.card:where(.astro-zts4jgjd){--sl-card-border:var(--sl-color-purple);--sl-card-bg:var(--sl-color-purple-low);border:1px solid var(--sl-color-gray-5);background-color:var(--sl-color-black);flex-direction:column;gap:clamp(.5rem,.125rem + 1vw,1rem);padding:clamp(1rem,.125rem + 3vw,2.5rem)}.card:where(.astro-zts4jgjd):nth-child(4n+1){--sl-card-border:var(--sl-color-orange);--sl-card-bg:var(--sl-color-orange-low)}.card:where(.astro-zts4jgjd):nth-child(4n+3){--sl-card-border:var(--sl-color-green);--sl-card-bg:var(--sl-color-green-low)}.card:where(.astro-zts4jgjd):nth-child(4n+4){--sl-card-border:var(--sl-color-red);--sl-card-bg:var(--sl-color-red-low)}.card:where(.astro-zts4jgjd):nth-child(4n+5){--sl-card-border:var(--sl-color-blue);--sl-card-bg:var(--sl-color-blue-low)}.title:where(.astro-zts4jgjd){font-weight:600;font-size:var(--sl-text-h4);color:var(--sl-color-white);line-height:var(--sl-line-height-headings);align-items:center;gap:1rem}.card:where(.astro-zts4jgjd) .icon:where(.astro-zts4jgjd){border:1px solid var(--sl-card-border);background-color:var(--sl-card-bg);border-radius:.25rem;flex-shrink:0;padding:.2em}.card:where(.astro-zts4jgjd) .body:where(.astro-zts4jgjd){font-size:clamp(var(--sl-text-sm), calc(.5rem + 1vw), var(--sl-text-body));margin:0}.card-grid:where(.astro-lmor3ela){grid-template-columns:100%;gap:1rem;display:grid}.card-grid:where(.astro-lmor3ela)>*{margin-top:0!important}@media (width>=50rem){.card-grid:where(.astro-lmor3ela){grid-template-columns:1fr 1fr;gap:1.5rem}.stagger:where(.astro-lmor3ela){--stagger-height:5rem;padding-bottom:var(--stagger-height)}.stagger:where(.astro-lmor3ela)>:nth-child(2n){transform:translateY(var(--stagger-height))}}}
+@layer starlight.components{svg:where(.astro-n5k4ipy7){color:var(--sl-icon-color);font-size:var(--sl-icon-size,1em);width:1em;height:1em}}
+</style><script type="module" src="/_astro/page.Dwipeu-R.js"></script></head><body class="astro-vdxcvpsm"><a class="sl-skip-link astro-vxeigawq" href="#_top">Skip to content</a><div class="page sl-flex astro-gqpr5s5a"><header class="header astro-gqpr5s5a"><div class="header astro-nczgtkxc"><div class="title-wrapper sl-flex astro-nczgtkxc"><a href="/" class="site-title sl-flex astro-clw6ags5"><img class="astro-clw6ags5" alt="OpenGood" src="/_astro/logo.j_QfFhns.svg" width="32" height="32"><span class="astro-clw6ags5" translate="no">OpenGood</span></a></div><div class="sl-flex print:hidden astro-nczgtkxc"><site-search class="astro-nczgtkxc astro-r5ar4xm7" data-translations="{&quot;placeholder&quot;:&quot;Search&quot;}"><button data-open-modal disabled aria-label="Search" aria-keyshortcuts="Control+K" class="astro-r5ar4xm7"><svg aria-hidden="true" class="astro-r5ar4xm7 astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.71 20.29 18 16.61A9 9 0 1 0 16.61 18l3.68 3.68a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.39ZM11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"/></svg><span class="sl-hidden md:sl-block astro-r5ar4xm7" aria-hidden="true">Search</span><kbd class="sl-hidden md:sl-flex astro-r5ar4xm7" style="display: none;"><kbd class="astro-r5ar4xm7">Ctrl</kbd><kbd class="astro-r5ar4xm7">K</kbd></kbd></button><dialog style="padding:0" aria-label="Search" class="astro-r5ar4xm7"><div class="dialog-frame sl-flex astro-r5ar4xm7"><button data-close-modal class="sl-flex md:sl-hidden astro-r5ar4xm7">Cancel</button><div class="search-container astro-r5ar4xm7"><div id="starlight__search" class="astro-r5ar4xm7"></div></div></div></dialog></site-search><script>
+	(() => {
+		const openBtn = document.querySelector('button[data-open-modal]');
+		const shortcut = openBtn?.querySelector('kbd');
+		if (!openBtn || !(shortcut instanceof HTMLElement)) return;
+		const platformKey = shortcut.querySelector('kbd');
+		if (platformKey && /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform)) {
+			platformKey.textContent = '⌘';
+			openBtn.setAttribute('aria-keyshortcuts', 'Meta+K');
+		}
+		shortcut.style.display = '';
+	})();
+</script><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.B-Vh4ymV.js"></script></div><div class="sl-hidden md:sl-flex print:hidden right-group astro-nczgtkxc"><div class="sl-flex social-icons astro-nczgtkxc"><a href="https://github.com/hujinnvshi/oghub" rel="me" class="sl-flex astro-cg55etiy"><span class="sr-only astro-cg55etiy">GitHub</span><svg aria-hidden="true" class="astro-cg55etiy astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a><a href="/rss.xml" rel="me" class="sl-flex astro-cg55etiy"><span class="sr-only astro-cg55etiy">RSS</span><svg aria-hidden="true" class="astro-cg55etiy astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M2.88 16.88a3 3 0 0 0 0 4.24 3 3 0 0 0 4.24 0 3 3 0 0 0-4.24-4.24Zm2.83 2.83a1 1 0 0 1-1.42-1.42 1 1 0 0 1 1.42 0 1 1 0 0 1 0 1.42ZM5 12a1 1 0 0 0 0 2 5 5 0 0 1 5 5 1 1 0 0 0 2 0 7 7 0 0 0-7-7Zm0-4a1 1 0 0 0 0 2 9 9 0 0 1 9 9 1 1 0 0 0 2 0 11.08 11.08 0 0 0-3.22-7.78A11.08 11.08 0 0 0 5 8Zm10.61.39A15.11 15.11 0 0 0 5 4a1 1 0 0 0 0 2 13 13 0 0 1 13 13 1 1 0 0 0 2 0 15.11 15.11 0 0 0-4.39-10.61Z"/></svg></a></div><starlight-theme-select><label style="--sl-select-width: 6.25em" class="astro-r2p65idu"><span class="sr-only astro-r2p65idu">Select theme</span><svg aria-hidden="true" class="icon label-icon astro-r2p65idu astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg><select autocomplete="off" class="astro-r2p65idu"><option value="dark" class="astro-r2p65idu">Dark</option><option value="light" class="astro-r2p65idu">Light</option><option value="auto" selected class="astro-r2p65idu">Auto</option></select><svg aria-hidden="true" class="icon caret astro-r2p65idu astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg></label></starlight-theme-select><script>
+	StarlightThemeProvider.updatePickers();
+</script><script type="module">var e=`starlight-theme`,t=e=>e===`auto`||e===`dark`||e===`light`?e:`auto`,n=()=>t(typeof localStorage<`u`&&localStorage.getItem(e));function r(t){typeof localStorage<`u`&&localStorage.setItem(e,t===`light`||t===`dark`?t:``)}var i=()=>matchMedia(`(prefers-color-scheme: light)`).matches?`light`:`dark`;function a(e){StarlightThemeProvider.updatePickers(e),document.documentElement.dataset.theme=e===`auto`?i():e,r(e)}matchMedia(`(prefers-color-scheme: light)`).addEventListener(`change`,()=>{n()===`auto`&&a(`auto`)});var o=class extends HTMLElement{constructor(){super(),a(n()),this.querySelector(`select`)?.addEventListener(`change`,e=>{e.currentTarget instanceof HTMLSelectElement&&a(t(e.currentTarget.value))})}};customElements.define(`starlight-theme-select`,o);</script><script type="module">var e=class extends HTMLElement{constructor(){super();let e=this.querySelector(`select`);e&&(e.addEventListener(`change`,e=>{e.currentTarget instanceof HTMLSelectElement&&(window.location.pathname=e.currentTarget.value)}),window.addEventListener(`pageshow`,t=>{if(!t.persisted)return;let n=e.querySelector(`option[selected]`)?.index;n!==e.selectedIndex&&(e.selectedIndex=n??0)}))}};customElements.define(`starlight-lang-select`,e);</script></div></div></header><nav class="sidebar print:hidden astro-gqpr5s5a" aria-label="Main"><starlight-menu-button class="print:hidden astro-vvx7mffu"><button aria-expanded="false" aria-label="Menu" aria-controls="starlight__sidebar" class="sl-flex md:sl-hidden astro-vvx7mffu"><svg aria-hidden="true" class="open-menu astro-vvx7mffu astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M3 8h18a1 1 0 1 0 0-2H3a1 1 0 0 0 0 2Zm18 8H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Zm0-5H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Z"/></svg><svg aria-hidden="true" class="close-menu astro-vvx7mffu astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="m13.41 12 6.3-6.29a1.004 1.004 0 1 0-1.42-1.42L12 10.59l-6.29-6.3a1.004 1.004 0 0 0-1.42 1.42l6.3 6.29-6.3 6.29a1 1 0 0 0 0 1.42.998.998 0 0 0 1.42 0l6.29-6.3 6.29 6.3a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.42L13.41 12Z"/></svg></button></starlight-menu-button><script type="module">var e=class extends HTMLElement{btn=this.querySelector(`button`);constructor(){super(),this.btn.addEventListener(`click`,()=>this.toggleExpanded());let e=this.closest(`nav`);e&&e.addEventListener(`keyup`,e=>this.closeOnEscape(e)),matchMedia(`(min-width: 50em)`).addEventListener(`change`,()=>this.setExpanded(!1))}setExpanded(e){this.setAttribute(`aria-expanded`,String(e)),document.body.toggleAttribute(`data-mobile-menu-expanded`,e),document.querySelectorAll(`.main-frame, .sl-skip-link`).forEach(t=>{t.toggleAttribute(`inert`,e)})}toggleExpanded(){this.setExpanded(this.getAttribute(`aria-expanded`)!==`true`)}closeOnEscape(e){e.code===`Escape`&&(this.setExpanded(!1),this.btn.focus())}};customElements.define(`starlight-menu-button`,e);</script><div id="starlight__sidebar" class="sidebar-pane astro-gqpr5s5a"><div class="sidebar-content sl-flex astro-gqpr5s5a"><sl-sidebar-state-persist data-hash="1sb7buv" class="astro-f5yvicm7"><script aria-hidden="true">
+		(() => {
+			try {
+				if (!matchMedia('(min-width: 50em)').matches) return;
+				/** @type {HTMLElement | null} */
+				const target = document.querySelector('sl-sidebar-state-persist');
+				const state = JSON.parse(sessionStorage.getItem('sl-sidebar-state') || '0');
+				if (!target || !state || target.dataset.hash !== state.hash) return;
+				window._starlightScrollRestore = state.scroll;
+				customElements.define(
+					'sl-sidebar-restore',
+					class SidebarRestore extends HTMLElement {
+						connectedCallback() {
+							try {
+								const idx = parseInt(this.dataset.index || '');
+								const details = this.closest('details');
+								if (details && typeof state.open[idx] === 'boolean') details.open = state.open[idx];
+							} catch {}
+						}
+					}
+				);
+			} catch {}
+		})();
+	</script><ul class="top-level astro-ojxuodky"><li class="astro-ojxuodky"><details open class="astro-ojxuodky"><summary class="astro-ojxuodky"><span class="group-label astro-ojxuodky"><span class="large astro-ojxuodky">📰 新闻动态</span></span><svg aria-hidden="true" class="caret astro-ojxuodky astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="0"></sl-sidebar-restore><ul class="astro-ojxuodky"><li class="astro-ojxuodky"><a href="/news/site-launched/" class="astro-ojxuodky"><span class="astro-ojxuodky">OpenGood 站点上线</span></a></li></ul></details></li><li class="astro-ojxuodky"><details open class="astro-ojxuodky"><summary class="astro-ojxuodky"><span class="group-label astro-ojxuodky"><span class="large astro-ojxuodky">🛠️ 技术方案</span></span><svg aria-hidden="true" class="caret astro-ojxuodky astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="1"></sl-sidebar-restore><ul class="astro-ojxuodky"><li class="astro-ojxuodky"><a href="/tech/build-personal-site/" class="astro-ojxuodky"><span class="astro-ojxuodky">从零搭建 Astro + Starlight 个人站点（GitHub Pages + 自定义域名）</span></a></li><li class="astro-ojxuodky"><a href="/tech/constellation-background/" class="astro-ojxuodky"><span class="astro-ojxuodky">给首页加粒子连线背景动效（Constellation）</span></a></li><li class="astro-ojxuodky"><a href="/tech/minicpm-o-45-昇腾-910c-部署上手指南/" class="astro-ojxuodky"><span class="astro-ojxuodky">MiniCPM-o 4.5 昇腾 910C 部署上手指南</span></a></li><li class="astro-ojxuodky"><a href="/tech/minicpm-omni-910b-perf-test-recap/" class="astro-ojxuodky"><span class="astro-ojxuodky">MiniCPM-o 4.5 昇腾 910B 推理优化：双工 RTF 与三项 Benchmark 测试复盘</span></a></li><li class="astro-ojxuodky"><a href="/tech/minicpm-omni-optimization-methodology/" class="astro-ojxuodky"><span class="astro-ojxuodky">把 RTF 从 1.087 压到 0.68：一次推理性能优化的全过程、层次与方法</span></a></li><li class="astro-ojxuodky"><a href="/tech/minicpm-昇腾挑战赛--高性能推理优化赛道--评测规范说明/" aria-current="page" class="astro-ojxuodky"><span class="astro-ojxuodky">MiniCPM 昇腾挑战赛 · 高性能推理优化赛道 — 评测规范说明</span></a></li><li class="astro-ojxuodky"><a href="/tech/rss-and-categories/" class="astro-ojxuodky"><span class="astro-ojxuodky">给 OpenGood 加上「内容分类」与「RSS 订阅」</span></a></li><li class="astro-ojxuodky"><a href="/tech/sidebar-emoji-border/" class="astro-ojxuodky"><span class="astro-ojxuodky">侧边栏分组加 emoji 图标 + 虚线框微调</span></a></li><li class="astro-ojxuodky"><a href="/tech/sidebar-tech-border/" class="astro-ojxuodky"><span class="astro-ojxuodky">给侧边栏某个分组的文章标题加自定义边框</span></a></li><li class="astro-ojxuodky"><a href="/tech/在昇腾-npu-上使用-vllm-omni部署-minicpm-o-45/" class="astro-ojxuodky"><span class="astro-ojxuodky">在昇腾 NPU 上使用 vllm-omni部署 MiniCPM-o 4.5</span></a></li><li class="astro-ojxuodky"><a href="/tech/面壁大赛群-qa-整理/" class="astro-ojxuodky"><span class="astro-ojxuodky">面壁大赛群 QA 整理</span></a></li></ul></details></li><li class="astro-ojxuodky"><details open class="astro-ojxuodky"><summary class="astro-ojxuodky"><span class="group-label astro-ojxuodky"><span class="large astro-ojxuodky">🚀 项目</span></span><svg aria-hidden="true" class="caret astro-ojxuodky astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="2"></sl-sidebar-restore><ul class="astro-ojxuodky"><li class="astro-ojxuodky"><a href="/projects/learn-ascendc-operator/" class="astro-ojxuodky"><span class="astro-ojxuodky">learn-ascendc-operator</span></a></li></ul></details></li><li class="astro-ojxuodky"><a href="/about/" class="large astro-ojxuodky"><span class="astro-ojxuodky">👋 关于我</span></a></li></ul><script aria-hidden="true">
+		(() => {
+			const scroller = document.getElementById('starlight__sidebar');
+			if (!window._starlightScrollRestore || !scroller) return;
+			scroller.scrollTop = window._starlightScrollRestore;
+			delete window._starlightScrollRestore;
+		})();
+	</script></sl-sidebar-state-persist><div class="md:sl-hidden"><div class="mobile-preferences sl-flex astro-b5gddk54"><div class="social-icons astro-b5gddk54"><a href="https://github.com/hujinnvshi/oghub" rel="me" class="sl-flex astro-cg55etiy"><span class="sr-only astro-cg55etiy">GitHub</span><svg aria-hidden="true" class="astro-cg55etiy astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a><a href="/rss.xml" rel="me" class="sl-flex astro-cg55etiy"><span class="sr-only astro-cg55etiy">RSS</span><svg aria-hidden="true" class="astro-cg55etiy astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M2.88 16.88a3 3 0 0 0 0 4.24 3 3 0 0 0 4.24 0 3 3 0 0 0-4.24-4.24Zm2.83 2.83a1 1 0 0 1-1.42-1.42 1 1 0 0 1 1.42 0 1 1 0 0 1 0 1.42ZM5 12a1 1 0 0 0 0 2 5 5 0 0 1 5 5 1 1 0 0 0 2 0 7 7 0 0 0-7-7Zm0-4a1 1 0 0 0 0 2 9 9 0 0 1 9 9 1 1 0 0 0 2 0 11.08 11.08 0 0 0-3.22-7.78A11.08 11.08 0 0 0 5 8Zm10.61.39A15.11 15.11 0 0 0 5 4a1 1 0 0 0 0 2 13 13 0 0 1 13 13 1 1 0 0 0 2 0 15.11 15.11 0 0 0-4.39-10.61Z"/></svg></a></div><starlight-theme-select><label style="--sl-select-width: 6.25em" class="astro-r2p65idu"><span class="sr-only astro-r2p65idu">Select theme</span><svg aria-hidden="true" class="icon label-icon astro-r2p65idu astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg><select autocomplete="off" class="astro-r2p65idu"><option value="dark" class="astro-r2p65idu">Dark</option><option value="light" class="astro-r2p65idu">Light</option><option value="auto" selected class="astro-r2p65idu">Auto</option></select><svg aria-hidden="true" class="icon caret astro-r2p65idu astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg></label></starlight-theme-select><script>
+	StarlightThemeProvider.updatePickers();
+</script></div></div></div></div></nav><div class="main-frame astro-gqpr5s5a"><script type="module">var e=document.getElementById(`starlight__sidebar`),t=e?.querySelector(`sl-sidebar-state-persist`),n=`sl-sidebar-state`,r=()=>{let r=[],i=t?.dataset.hash||``;try{let e=sessionStorage.getItem(n),t=JSON.parse(e||`{}`);Array.isArray(t.open)&&t.hash===i&&(r=t.open)}catch{}return{hash:i,open:r,scroll:e?.scrollTop||0}},i=e=>{try{sessionStorage.setItem(n,JSON.stringify(e))}catch{}},a=()=>i(r()),o=(e,t)=>{let n=r();n.open[t]=e,i(n)};t?.addEventListener(`click`,e=>{if(!(e.target instanceof Element))return;let t=e.target.closest(`summary`)?.closest(`details`);if(!t)return;let n=t.querySelector(`sl-sidebar-restore`),r=parseInt(n?.dataset.index||``);isNaN(r)||o(!t.open,r)}),addEventListener(`visibilitychange`,()=>{document.visibilityState===`hidden`&&a()});</script><div class="lg:sl-flex astro-abfeecmu"><aside class="right-sidebar-container print:hidden astro-abfeecmu"><div class="right-sidebar astro-abfeecmu"><div class="lg:sl-hidden astro-q5mffni3"><mobile-starlight-toc data-min-h="2" data-max-h="3" class="astro-5ulgm6bh"><nav aria-labelledby="starlight__on-this-page--mobile" class="astro-5ulgm6bh"><details id="starlight__mobile-toc" class="astro-5ulgm6bh"><summary id="starlight__on-this-page--mobile" class="sl-flex astro-5ulgm6bh"><span class="toggle sl-flex astro-5ulgm6bh">On this page<svg aria-hidden="true" class="caret astro-5ulgm6bh astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></span><span class="display-current astro-5ulgm6bh"></span></summary><div class="dropdown astro-5ulgm6bh"><ul class="isMobile astro-cxyftcne" style="--depth: 0;"><li style="--depth: 0;" class="astro-cxyftcne"><a href="#_top" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">Overview</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#41-精度达标" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">4.1 精度达标</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#42-demo-可用" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">4.2 Demo 可用</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#全双工推理阶段说明" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">全双工推理阶段说明</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#性能-baseline昇腾-910c单并发" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">性能 Baseline（昇腾 910C，单并发）</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#核心评测指标" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">核心评测指标</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#性能-baseline昇腾-910c单并发-1" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">性能 Baseline（昇腾 910C，单并发）</span></a></li></ul></div></details></nav></mobile-starlight-toc><script type="module" src="/_astro/MobileTableOfContents.astro_astro_type_script_index_0_lang.BcSo_yiZ.js"></script></div><div class="right-sidebar-panel sl-hidden lg:sl-block astro-q5mffni3"><div class="sl-container astro-q5mffni3"><starlight-toc data-min-h="2" data-max-h="3"><nav aria-labelledby="starlight__on-this-page"><h2 id="starlight__on-this-page">On this page</h2><ul class="astro-cxyftcne" style="--depth: 0;"><li style="--depth: 0;" class="astro-cxyftcne"><a href="#_top" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">Overview</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#41-精度达标" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">4.1 精度达标</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#42-demo-可用" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">4.2 Demo 可用</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#全双工推理阶段说明" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">全双工推理阶段说明</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#性能-baseline昇腾-910c单并发" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">性能 Baseline（昇腾 910C，单并发）</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#核心评测指标" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">核心评测指标</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#性能-baseline昇腾-910c单并发-1" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">性能 Baseline（昇腾 910C，单并发）</span></a></li></ul></nav></starlight-toc><script type="module" src="/_astro/TableOfContents.astro_astro_type_script_index_0_lang.Csloo1VZ.js"></script></div></div></div></aside><div class="main-pane astro-abfeecmu"><main data-pagefind-body class="astro-vdxcvpsm" lang="en" dir="ltr"><div class="content-panel astro-oil7k7jf"><div class="sl-container astro-oil7k7jf"><h1 id="_top" class="astro-2sm4b3ln">MiniCPM 昇腾挑战赛 · 高性能推理优化赛道 — 评测规范说明</h1></div></div><div class="content-panel astro-oil7k7jf"><div class="sl-container astro-oil7k7jf"><div class="sl-markdown-content"><div class="sl-heading-wrapper level-h1"><h1 id="minicpm-昇腾挑战赛--高性能推理优化赛道--评测规范说明">MiniCPM 昇腾挑战赛 · 高性能推理优化赛道 — 评测规范说明</h1><a class="sl-anchor-link" href="#minicpm-昇腾挑战赛--高性能推理优化赛道--评测规范说明"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “MiniCPM 昇腾挑战赛 · 高性能推理优化赛道 — 评测规范说明”</span></a></div>
+<p>本文档为赛道一（高性能推理优化赛道）的官方评测规范说明，包含各子赛道的精度与性能 Baseline 数据、Benchmark 评测方式及准入条件，供参赛团队参考。</p>
+<hr>
+<div class="sl-heading-wrapper level-h1"><h1 id="一赛道与子赛道概览">一、赛道与子赛道概览</h1><a class="sl-anchor-link" href="#一赛道与子赛道概览"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “一、赛道与子赛道概览”</span></a></div>
+<p>本赛道围绕 <strong>MiniCPM-o 4.5</strong> 全模态模型，在 <strong>昇腾 NPU 单卡 910C</strong> 上进行推理适配与性能优化。赛道下设两个独立子赛道，分别采用不同的推理框架，独立评测与排名。</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>子赛道 A</th>
+<th>子赛道 B</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>推理框架</strong></td>
+<td>llama.cpp-omni</td>
+<td>vLLM-Omni</td>
+</tr>
+<tr>
+<td><strong>运行环境</strong></td>
+<td>CANN 9.1.0-beta1</td>
+<td>vllm-omni:v0.25.0-a3</td>
+</tr>
+<tr>
+<td><strong>核心性能指标</strong></td>
+<td>RTF</td>
+<td>RTF、TTFT、TTFP</td>
+</tr>
+<tr>
+<td><strong>框架仓库</strong></td>
+<td><a href="https://github.com/tc-mb/llama.cpp-omni">llama.cpp-omni</a></td>
+<td><a href="https://github.com/vllm-project/vllm-omni">vLLM-Omni</a></td>
+</tr>
+</tbody>
+</table>
+<hr>
+<div class="sl-heading-wrapper level-h1"><h1 id="二官方-benchmark-与评测方式">二、官方 Benchmark 与评测方式</h1><a class="sl-anchor-link" href="#二官方-benchmark-与评测方式"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “二、官方 Benchmark 与评测方式”</span></a></div>
+<p>本赛道使用以下三项 Benchmark 对优化版本的模型精度和能力进行统一验证。各 Benchmark 的评测方式与原版一致，基于官方指定的数据版本、测试子集和评测脚本执行。</p>
+<table>
+<thead>
+<tr>
+<th>Benchmark</th>
+<th>评测能力</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>VideoMME</strong></td>
+<td>视频多模态理解</td>
+<td>评估模型在视频理解任务上的准确率</td>
+</tr>
+<tr>
+<td><strong>Daily-Omni</strong></td>
+<td>全模态日常交互</td>
+<td>评估模型在日常对话与交互场景中的综合表现</td>
+</tr>
+<tr>
+<td><strong>TTS-Seed</strong></td>
+<td>语音合成质量</td>
+<td>包含 ASV（说话人相似度，↑ 越高越好）和 WER（语音识别错误率，↓ 越低越好）</td>
+</tr>
+</tbody>
+</table>
+<p>两个子赛道均以对应框架下的官方基线结果作为对比基准。</p>
+<hr>
+<div class="sl-heading-wrapper level-h1"><h1 id="三精度-baseline两子赛道共用">三、精度 Baseline（两子赛道共用）</h1><a class="sl-anchor-link" href="#三精度-baseline两子赛道共用"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “三、精度 Baseline（两子赛道共用）”</span></a></div>
+<p>参赛方案必须同时满足以下两项条件，方可进入性能评测与排名。</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="41-精度达标">4.1 精度达标</h2><a class="sl-anchor-link" href="#41-精度达标"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “4.1 精度达标”</span></a></div>
+<p>优化版本相对于该子赛道官方基线的精度降幅<strong>不得超过 2 个百分点</strong>。以昇腾 910C 复现（F16）为基线，精度准入参考如下：</p>
+<table>
+<thead>
+<tr>
+<th>Benchmark</th>
+<th>基线值</th>
+<th>准入阈值</th>
+<th>规则</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>VideoMME</td>
+<td>69.0</td>
+<td>≥ 67.0</td>
+<td>降幅 ≤ 2pp</td>
+</tr>
+<tr>
+<td>Daily-Omni</td>
+<td>79.5</td>
+<td>≥ 77.5</td>
+<td>降幅 ≤ 2pp</td>
+</tr>
+<tr>
+<td>TTS-Seed ASV</td>
+<td>0.709</td>
+<td>≥ 0.689</td>
+<td>降幅 ≤ 0.02</td>
+</tr>
+<tr>
+<td>TTS-Seed WER</td>
+<td>1.414</td>
+<td>≤ 1.56</td>
+<td>增幅 ≤ 10%</td>
+</tr>
+</tbody>
+</table>
+<p>VideoMME 和 Daily-Omni 按绝对降幅 ≤ 2 个百分点判定；
+TTS-Seed ASV 按绝对降幅 ≤ 0.02 判定；TTS-Seed WER 按相对增幅 ≤ 10% 判定</p>
+<p>以下情况将被判定为不达标：</p>
+<ul>
+<li>
+<p>精度降幅超过规定范围</p>
+</li>
+<li>
+<p>模型核心能力出现明显下降</p>
+</li>
+<li>
+<p>输出结果异常或无法完成指定 Benchmark</p>
+</li>
+<li>
+<p>修改模型行为，导致评测结果失去可比性</p>
+</li>
+</ul>
+<div class="sl-heading-wrapper level-h2"><h2 id="42-demo-可用">4.2 Demo 可用</h2><a class="sl-anchor-link" href="#42-demo-可用"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “4.2 Demo 可用”</span></a></div>
+<p>优化版本必须能够正常接入该子赛道指定的官方 Demo，并完成稳定的端到端运行。评审将检查：</p>
+<ul>
+<li>
+<p>模型服务正常启动，Demo 正常连接推理服务</p>
+</li>
+<li>
+<p>音频、视频和文本输入能够正常处理，模型输出完整</p>
+</li>
+<li>
+<p>流式语音输出连续，无明显卡顿、中断或异常退出</p>
+</li>
+<li>
+<p>能够完成官方指定的完整交互流程，连续运行保持稳定</p>
+</li>
+</ul>
+<p>仅能运行 Benchmark 但无法正常接入 Demo 的方案，不满足准入条件。</p>
+<hr>
+<div class="sl-heading-wrapper level-h1"><h1 id="四准入条件">四、准入条件</h1><a class="sl-anchor-link" href="#四准入条件"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “四、准入条件”</span></a></div>
+<p>以下为 MiniCPM-o 4.5 在不同版本下的官方精度对比数据，两个子赛道共用同一组基线作为精度准入参考。</p>
+<table>
+<thead>
+<tr>
+<th>权重精度</th>
+<th>VideoMME</th>
+<th>Daily-Omni</th>
+<th>TTS-Seed ASV ↑</th>
+<th>TTS-Seed WER ↓</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>F16</strong></td>
+<td><strong>69.0</strong></td>
+<td><strong>79.5</strong></td>
+<td><strong>0.709</strong></td>
+<td><strong>1.414</strong></td>
+</tr>
+<tr>
+<td>Q8_0</td>
+<td>68.9</td>
+<td>79.6</td>
+<td>0.708</td>
+<td>1.387</td>
+</tr>
+<tr>
+<td>Q4_0</td>
+<td>67.6</td>
+<td>79.9</td>
+<td>0.707</td>
+<td>1.387</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<div class="sl-heading-wrapper level-h1"><h1 id="五子赛道-a-性能-baseline--llamacpp-omni">五、子赛道 A 性能 Baseline — llama.cpp-omni</h1><a class="sl-anchor-link" href="#五子赛道-a-性能-baseline--llamacpp-omni"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “五、子赛道 A 性能 Baseline — llama.cpp-omni”</span></a></div>
+<div class="sl-heading-wrapper level-h2"><h2 id="全双工推理阶段说明">全双工推理阶段说明</h2><a class="sl-anchor-link" href="#全双工推理阶段说明"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “全双工推理阶段说明”</span></a></div>
+<p>MiniCPM-o 4.5 全双工推理可分为三种状态：</p>
+<ul>
+<li>
+<p><strong>LISTEN</strong>：运行 VPM、APM 和 LLM，不运行 TTS / T2W。</p>
+</li>
+<li>
+<p><strong>SPEAK 生成</strong>：运行 VPM、APM、LLM、TTS 和 T2W。负载最高，是实时流式生成的主要瓶颈。</p>
+</li>
+<li>
+<p><strong>SPEAK 尾部</strong>：LLM 已结束，仅 TTS / T2W 继续生成剩余语音。</p>
+</li>
+</ul>
+<p><strong>优化目标</strong>：本次比赛主要优化目标为 SPEAK 生成阶段（SPEAK→WAV 完整链路）的 RTF，而非全部 chunk 的平均 RTF。该阶段负载最高，是实时流式语音生成在端侧运行的主要瓶颈。</p>
+<p><strong>注意</strong>：不同测试用例因 LISTEN 和 SPEAK 阶段比例不同，全部 chunk 的平均 RTF 数值差异较大。如果误用全部 chunk 的平均 RTF 进行对比会造成误导，选手测试时需格外注意，应以 SPEAK 生成阶段的 RTF 作为优化和对比依据。</p>
+<p>$\text{RTF} = \frac{\text{音频 chunk 生成耗时}}{\text{音频 chunk 时长}}$</p>
+<p>RTF 越低，表示模型生成音频的速度越快，实时性能越好。最终排名以 <strong>SPEAK 生成阶段的 RTF</strong> 为核心依据，在统一环境下评测。</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="性能-baseline昇腾-910c单并发">性能 Baseline（昇腾 910C，单并发）</h2><a class="sl-anchor-link" href="#性能-baseline昇腾-910c单并发"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “性能 Baseline（昇腾 910C，单并发）”</span></a></div>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>说明</th>
+<th>F16 官方基线值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>全部 chunk 平均 RTF</strong></td>
+<td>所有阶段 chunk 的平均实时因子（仅供参考）</td>
+<td>0.618</td>
+</tr>
+<tr>
+<td><strong>SPEAK→WAV 完整链路 RTF</strong></td>
+<td>SPEAK 生成阶段的 RTF（<strong>主要优化目标</strong>）</td>
+<td><strong>1.087</strong>（平均 1087.3 ms）</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<div class="sl-heading-wrapper level-h1"><h1 id="六子赛道-b-性能-baseline--vllm-omni">六、子赛道 B 性能 Baseline — vLLM-Omni</h1><a class="sl-anchor-link" href="#六子赛道-b-性能-baseline--vllm-omni"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “六、子赛道 B 性能 Baseline — vLLM-Omni”</span></a></div>
+<div class="sl-heading-wrapper level-h2"><h2 id="核心评测指标">核心评测指标</h2><a class="sl-anchor-link" href="#核心评测指标"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “核心评测指标”</span></a></div>
+<p>子赛道 B 采用三个维度综合评测：</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>定义</th>
+<th>优化方向</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>RTF</strong></td>
+<td>音频 chunk 生成耗时 ÷ 音频 chunk 时长</td>
+<td>↓ 越低越好</td>
+</tr>
+<tr>
+<td><strong>TTFT</strong></td>
+<td>从接收请求到模型输出首个有效 token 的时间</td>
+<td>↓ 越低越好</td>
+</tr>
+<tr>
+<td><strong>TTFP</strong></td>
+<td>从接收请求到输出第一段可用音频的时间</td>
+<td>↓ 越低越好</td>
+</tr>
+</tbody>
+</table>
+<p>最终成绩将综合考虑 RTF、TTFT 与 TTFP，具体归一化方法、统计口径和权重以官方最终评测文档为准。</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="性能-baseline昇腾-910c单并发-1">性能 Baseline（昇腾 910C，单并发）</h2><a class="sl-anchor-link" href="#性能-baseline昇腾-910c单并发-1"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “性能 Baseline（昇腾 910C，单并发）”</span></a></div>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>说明</th>
+<th>官方基线值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>TTFT</strong></td>
+<td>Time to First Token，首个有效 token 的响应时间</td>
+<td><strong>333.27 ms</strong></td>
+</tr>
+<tr>
+<td><strong>TTFP</strong></td>
+<td>Time to First Packet，首段可用音频的响应时间</td>
+<td><strong>986.47 ms</strong></td>
+</tr>
+<tr>
+<td><strong>RTF</strong></td>
+<td>Real-Time Factor，每个音频 chunk 的实时因子</td>
+<td><strong>0.4423</strong></td>
+</tr>
+</tbody>
+</table>
+<hr>
+<div class="sl-heading-wrapper level-h1"><h1 id="七统一评测流程">七、统一评测流程</h1><a class="sl-anchor-link" href="#七统一评测流程"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “七、统一评测流程”</span></a></div>
+<table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1. 框架与环境检查</strong></td>
+<td>确认参赛方案使用对应子赛道指定的推理框架，并能在官方昇腾环境中完成部署和运行</td>
+</tr>
+<tr>
+<td><strong>2. Benchmark 精度评测</strong></td>
+<td>通过 VideoMME、Daily-Omni、TTS-Seed 对优化版本进行模型能力和精度验证</td>
+</tr>
+<tr>
+<td><strong>3. Demo 可用性验证</strong></td>
+<td>将优化版本接入对应子赛道官方 Demo，完成端到端功能与稳定性测试</td>
+</tr>
+<tr>
+<td><strong>4. 性能评测</strong></td>
+<td>正式测试前进行多轮预热，在统一配置下执行多轮测试，记录各项性能指标</td>
+</tr>
+<tr>
+<td><strong>5. 工程复现审查</strong></td>
+<td>主办方根据提交的代码、配置与文档在官方环境中重新部署并测试，验证可复现性</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<div class="sl-heading-wrapper level-h1"><h1 id="八最终提交内容">八、最终提交内容</h1><a class="sl-anchor-link" href="#八最终提交内容"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “八、最终提交内容”</span></a></div>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>具体内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>完整代码与配置</strong></td>
+<td>推理适配与性能优化代码、框架配置、服务启动脚本、Benchmark 执行脚本、Demo 启动脚本、依赖与环境配置文件</td>
+</tr>
+<tr>
+<td><strong>Benchmark 评测结果</strong></td>
+<td>VideoMME、Daily-Omni、TTS-Seed 三项 Benchmark 的完整结果（含测试命令、参数配置、原始输出和结果汇总）</td>
+</tr>
+<tr>
+<td><strong>性能测试报告</strong></td>
+<td>RTF（及 TTFT / TTFP，vLLM-Omni 子赛道）、测试环境、测试数据、统计方式、优化前后对比</td>
+</tr>
+<tr>
+<td><strong>可运行 Demo</strong></td>
+<td>演示视频、Demo 使用说明、启动与访问方式</td>
+</tr>
+<tr>
+<td><strong>优化与复现说明</strong></td>
+<td>原始性能瓶颈分析、优化方法、各项优化带来的性能变化、完整复现步骤</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<div class="sl-heading-wrapper level-h1"><h1 id="九参考链接">九、参考链接</h1><a class="sl-anchor-link" href="#九参考链接"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “九、参考链接”</span></a></div>
+<table>
+<thead>
+<tr>
+<th>资源</th>
+<th>链接</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>推理框架 — 子赛道 A</td>
+<td><a href="https://github.com/tc-mb/llama.cpp-omni">llama.cpp-omni</a></td>
+</tr>
+<tr>
+<td>推理框架 — 子赛道 B</td>
+<td><a href="https://github.com/vllm-project/vllm-omni">vLLM-Omni</a></td>
+</tr>
+<tr>
+<td>模型</td>
+<td><a href="https://www.modelscope.cn/models/OpenBMB/MiniCPM-o-4_5">MiniCPM-o 4.5（ModelScope）</a></td>
+</tr>
+<tr>
+<td>Demo — 子赛道 A</td>
+<td><a href="https://github.com/OpenBMB/MiniCPM-o-Demo">MiniCPM-o-Demo</a></td>
+</tr>
+<tr>
+<td>Demo — 子赛道 B</td>
+<td><a href="https://qcn9xlavkz5b.feishu.cn/wiki/UzxWwSnofifkxCkFNcAcTIaNnFe">在昇腾 NPU 上使用 vllm-omni部署 MiniCPM-o 4.5</a></td>
+</tr>
+<tr>
+<td>算力申请指南</td>
+<td><a href="https://modelbest.feishu.cn/wiki/PeStwWCA1i0ptXkqh9scu5AynUe">HiDevLab 申请流程</a></td>
+</tr>
+</tbody>
+</table>
+<hr>
+<p><em>如对赛题有任何疑问，请通过官方渠道与组委会联系。</em></p>
+</div><footer class="sl-flex astro-xhxjzfa7"><div class="meta sl-flex astro-xhxjzfa7"></div><div class="pagination-links print:hidden astro-jgq3vlii" dir="ltr"><a href="/tech/minicpm-omni-optimization-methodology/" rel="prev" class="astro-jgq3vlii"><svg aria-hidden="true" class="astro-jgq3vlii astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.5rem;"><path d="M17 11H9.41l3.3-3.29a1.004 1.004 0 1 0-1.42-1.42l-5 5a1 1 0 0 0-.21.33 1 1 0 0 0 0 .76 1 1 0 0 0 .21.33l5 5a1.002 1.002 0 0 0 1.639-.325 1 1 0 0 0-.219-1.095L9.41 13H17a1 1 0 0 0 0-2Z"/></svg><span class="astro-jgq3vlii">Previous<br class="astro-jgq3vlii"><span class="link-title astro-jgq3vlii">把 RTF 从 1.087 压到 0.68：一次推理性能优化的全过程、层次与方法</span></span></a><a href="/tech/rss-and-categories/" rel="next" class="astro-jgq3vlii"><svg aria-hidden="true" class="astro-jgq3vlii astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.5rem;"><path d="M17.92 11.62a1.001 1.001 0 0 0-.21-.33l-5-5a1.003 1.003 0 1 0-1.42 1.42l3.3 3.29H7a1 1 0 0 0 0 2h7.59l-3.3 3.29a1.002 1.002 0 0 0 .325 1.639 1 1 0 0 0 1.095-.219l5-5a1 1 0 0 0 .21-.33 1 1 0 0 0 0-.76Z"/></svg><span class="astro-jgq3vlii">Next<br class="astro-jgq3vlii"><span class="link-title astro-jgq3vlii">给 OpenGood 加上「内容分类」与「RSS 订阅」</span></span></a></div></footer></div></div></main></div></div></div></div></body></html>

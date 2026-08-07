@@ -1,0 +1,479 @@
+<!DOCTYPE html><html lang="en" dir="ltr" data-theme="dark" data-has-toc data-has-sidebar class="astro-vdxcvpsm"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>面壁大赛群 QA 整理 | OpenGood</title><link rel="canonical" href="https://github.opengood.cc/tech/%E9%9D%A2%E5%A3%81%E5%A4%A7%E8%B5%9B%E7%BE%A4-qa-%E6%95%B4%E7%90%86/"/><link rel="sitemap" href="/sitemap-index.xml"/><link rel="shortcut icon" href="/favicon.svg" type="image/svg+xml"/><meta name="generator" content="Astro v7.1.6"/><meta name="generator" content="Starlight v0.41.7"/><meta property="og:title" content="面壁大赛群 QA 整理"/><meta property="og:type" content="article"/><meta property="og:url" content="https://github.opengood.cc/tech/%E9%9D%A2%E5%A3%81%E5%A4%A7%E8%B5%9B%E7%BE%A4-qa-%E6%95%B4%E7%90%86/"/><meta property="og:locale" content="en"/><meta property="og:description" content="面壁 MiniCPM 昇腾挑战赛参赛群常见问题与官方回答整理。"/><meta property="og:site_name" content="OpenGood"/><meta name="twitter:card" content="summary_large_image"/><meta name="description" content="面壁 MiniCPM 昇腾挑战赛参赛群常见问题与官方回答整理。"/><link rel="alternate" type="application/rss+xml" title="OpenGood" href="/rss.xml"><script>
+	window.StarlightThemeProvider = (() => {
+		const storedTheme =
+			typeof localStorage !== 'undefined' && localStorage.getItem('starlight-theme');
+		const theme =
+			storedTheme ||
+			(window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+		document.documentElement.dataset.theme = theme === 'light' ? 'light' : 'dark';
+		return {
+			updatePickers(theme = storedTheme || 'auto') {
+				document.querySelectorAll('starlight-theme-select').forEach((picker) => {
+					const select = picker.querySelector('select');
+					if (select) select.value = theme;
+					/** @type {HTMLTemplateElement | null} */
+					const tmpl = document.querySelector(`#theme-icons`);
+					const newIcon = tmpl && tmpl.content.querySelector('.' + theme);
+					if (newIcon) {
+						const oldIcon = picker.querySelector('svg.label-icon');
+						if (oldIcon) {
+							oldIcon.replaceChildren(...newIcon.cloneNode(true).childNodes);
+						}
+					}
+				});
+			},
+		};
+	})();
+</script><template id="theme-icons"><svg aria-hidden="true" class="light astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M5 12a1 1 0 0 0-1-1H3a1 1 0 0 0 0 2h1a1 1 0 0 0 1-1Zm.64 5-.71.71a1 1 0 0 0 0 1.41 1 1 0 0 0 1.41 0l.71-.71A1 1 0 0 0 5.64 17ZM12 5a1 1 0 0 0 1-1V3a1 1 0 0 0-2 0v1a1 1 0 0 0 1 1Zm5.66 2.34a1 1 0 0 0 .7-.29l.71-.71a1 1 0 1 0-1.41-1.41l-.66.71a1 1 0 0 0 0 1.41 1 1 0 0 0 .66.29Zm-12-.29a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.71-.71a1.004 1.004 0 1 0-1.43 1.41l.73.71ZM21 11h-1a1 1 0 0 0 0 2h1a1 1 0 0 0 0-2Zm-2.64 6A1 1 0 0 0 17 18.36l.71.71a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.76-.66ZM12 6.5a5.5 5.5 0 1 0 5.5 5.5A5.51 5.51 0 0 0 12 6.5Zm0 9a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Zm0 3.5a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 0-1-1Z"/></svg><svg aria-hidden="true" class="dark astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.64 13a1 1 0 0 0-1.05-.14 8.049 8.049 0 0 1-3.37.73 8.15 8.15 0 0 1-8.14-8.1 8.59 8.59 0 0 1 .25-2A1 1 0 0 0 8 2.36a10.14 10.14 0 1 0 14 11.69 1 1 0 0 0-.36-1.05Zm-9.5 6.69A8.14 8.14 0 0 1 7.08 5.22v.27a10.15 10.15 0 0 0 10.14 10.14 9.784 9.784 0 0 0 2.1-.22 8.11 8.11 0 0 1-7.18 4.32v-.04Z"/></svg><svg aria-hidden="true" class="auto astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg></template><link rel="stylesheet" href="/_astro/print.ehPL0gv-.css" media="print"><link rel="stylesheet" href="/_astro/common.DJrPAfyb.css"><style>@layer starlight.components{.card:where(.astro-zts4jgjd){--sl-card-border:var(--sl-color-purple);--sl-card-bg:var(--sl-color-purple-low);border:1px solid var(--sl-color-gray-5);background-color:var(--sl-color-black);flex-direction:column;gap:clamp(.5rem,.125rem + 1vw,1rem);padding:clamp(1rem,.125rem + 3vw,2.5rem)}.card:where(.astro-zts4jgjd):nth-child(4n+1){--sl-card-border:var(--sl-color-orange);--sl-card-bg:var(--sl-color-orange-low)}.card:where(.astro-zts4jgjd):nth-child(4n+3){--sl-card-border:var(--sl-color-green);--sl-card-bg:var(--sl-color-green-low)}.card:where(.astro-zts4jgjd):nth-child(4n+4){--sl-card-border:var(--sl-color-red);--sl-card-bg:var(--sl-color-red-low)}.card:where(.astro-zts4jgjd):nth-child(4n+5){--sl-card-border:var(--sl-color-blue);--sl-card-bg:var(--sl-color-blue-low)}.title:where(.astro-zts4jgjd){font-weight:600;font-size:var(--sl-text-h4);color:var(--sl-color-white);line-height:var(--sl-line-height-headings);align-items:center;gap:1rem}.card:where(.astro-zts4jgjd) .icon:where(.astro-zts4jgjd){border:1px solid var(--sl-card-border);background-color:var(--sl-card-bg);border-radius:.25rem;flex-shrink:0;padding:.2em}.card:where(.astro-zts4jgjd) .body:where(.astro-zts4jgjd){font-size:clamp(var(--sl-text-sm), calc(.5rem + 1vw), var(--sl-text-body));margin:0}.card-grid:where(.astro-lmor3ela){grid-template-columns:100%;gap:1rem;display:grid}.card-grid:where(.astro-lmor3ela)>*{margin-top:0!important}@media (width>=50rem){.card-grid:where(.astro-lmor3ela){grid-template-columns:1fr 1fr;gap:1.5rem}.stagger:where(.astro-lmor3ela){--stagger-height:5rem;padding-bottom:var(--stagger-height)}.stagger:where(.astro-lmor3ela)>:nth-child(2n){transform:translateY(var(--stagger-height))}}}
+@layer starlight.components{svg:where(.astro-n5k4ipy7){color:var(--sl-icon-color);font-size:var(--sl-icon-size,1em);width:1em;height:1em}}
+</style><script type="module" src="/_astro/page.Dwipeu-R.js"></script></head><body class="astro-vdxcvpsm"><a class="sl-skip-link astro-vxeigawq" href="#_top">Skip to content</a><div class="page sl-flex astro-gqpr5s5a"><header class="header astro-gqpr5s5a"><div class="header astro-nczgtkxc"><div class="title-wrapper sl-flex astro-nczgtkxc"><a href="/" class="site-title sl-flex astro-clw6ags5"><img class="astro-clw6ags5" alt="OpenGood" src="/_astro/logo.j_QfFhns.svg" width="32" height="32"><span class="astro-clw6ags5" translate="no">OpenGood</span></a></div><div class="sl-flex print:hidden astro-nczgtkxc"><site-search class="astro-nczgtkxc astro-r5ar4xm7" data-translations="{&quot;placeholder&quot;:&quot;Search&quot;}"><button data-open-modal disabled aria-label="Search" aria-keyshortcuts="Control+K" class="astro-r5ar4xm7"><svg aria-hidden="true" class="astro-r5ar4xm7 astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.71 20.29 18 16.61A9 9 0 1 0 16.61 18l3.68 3.68a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.39ZM11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"/></svg><span class="sl-hidden md:sl-block astro-r5ar4xm7" aria-hidden="true">Search</span><kbd class="sl-hidden md:sl-flex astro-r5ar4xm7" style="display: none;"><kbd class="astro-r5ar4xm7">Ctrl</kbd><kbd class="astro-r5ar4xm7">K</kbd></kbd></button><dialog style="padding:0" aria-label="Search" class="astro-r5ar4xm7"><div class="dialog-frame sl-flex astro-r5ar4xm7"><button data-close-modal class="sl-flex md:sl-hidden astro-r5ar4xm7">Cancel</button><div class="search-container astro-r5ar4xm7"><div id="starlight__search" class="astro-r5ar4xm7"></div></div></div></dialog></site-search><script>
+	(() => {
+		const openBtn = document.querySelector('button[data-open-modal]');
+		const shortcut = openBtn?.querySelector('kbd');
+		if (!openBtn || !(shortcut instanceof HTMLElement)) return;
+		const platformKey = shortcut.querySelector('kbd');
+		if (platformKey && /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform)) {
+			platformKey.textContent = '⌘';
+			openBtn.setAttribute('aria-keyshortcuts', 'Meta+K');
+		}
+		shortcut.style.display = '';
+	})();
+</script><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.B-Vh4ymV.js"></script></div><div class="sl-hidden md:sl-flex print:hidden right-group astro-nczgtkxc"><div class="sl-flex social-icons astro-nczgtkxc"><a href="https://github.com/hujinnvshi/oghub" rel="me" class="sl-flex astro-cg55etiy"><span class="sr-only astro-cg55etiy">GitHub</span><svg aria-hidden="true" class="astro-cg55etiy astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a><a href="/rss.xml" rel="me" class="sl-flex astro-cg55etiy"><span class="sr-only astro-cg55etiy">RSS</span><svg aria-hidden="true" class="astro-cg55etiy astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M2.88 16.88a3 3 0 0 0 0 4.24 3 3 0 0 0 4.24 0 3 3 0 0 0-4.24-4.24Zm2.83 2.83a1 1 0 0 1-1.42-1.42 1 1 0 0 1 1.42 0 1 1 0 0 1 0 1.42ZM5 12a1 1 0 0 0 0 2 5 5 0 0 1 5 5 1 1 0 0 0 2 0 7 7 0 0 0-7-7Zm0-4a1 1 0 0 0 0 2 9 9 0 0 1 9 9 1 1 0 0 0 2 0 11.08 11.08 0 0 0-3.22-7.78A11.08 11.08 0 0 0 5 8Zm10.61.39A15.11 15.11 0 0 0 5 4a1 1 0 0 0 0 2 13 13 0 0 1 13 13 1 1 0 0 0 2 0 15.11 15.11 0 0 0-4.39-10.61Z"/></svg></a></div><starlight-theme-select><label style="--sl-select-width: 6.25em" class="astro-r2p65idu"><span class="sr-only astro-r2p65idu">Select theme</span><svg aria-hidden="true" class="icon label-icon astro-r2p65idu astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg><select autocomplete="off" class="astro-r2p65idu"><option value="dark" class="astro-r2p65idu">Dark</option><option value="light" class="astro-r2p65idu">Light</option><option value="auto" selected class="astro-r2p65idu">Auto</option></select><svg aria-hidden="true" class="icon caret astro-r2p65idu astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg></label></starlight-theme-select><script>
+	StarlightThemeProvider.updatePickers();
+</script><script type="module">var e=`starlight-theme`,t=e=>e===`auto`||e===`dark`||e===`light`?e:`auto`,n=()=>t(typeof localStorage<`u`&&localStorage.getItem(e));function r(t){typeof localStorage<`u`&&localStorage.setItem(e,t===`light`||t===`dark`?t:``)}var i=()=>matchMedia(`(prefers-color-scheme: light)`).matches?`light`:`dark`;function a(e){StarlightThemeProvider.updatePickers(e),document.documentElement.dataset.theme=e===`auto`?i():e,r(e)}matchMedia(`(prefers-color-scheme: light)`).addEventListener(`change`,()=>{n()===`auto`&&a(`auto`)});var o=class extends HTMLElement{constructor(){super(),a(n()),this.querySelector(`select`)?.addEventListener(`change`,e=>{e.currentTarget instanceof HTMLSelectElement&&a(t(e.currentTarget.value))})}};customElements.define(`starlight-theme-select`,o);</script><script type="module">var e=class extends HTMLElement{constructor(){super();let e=this.querySelector(`select`);e&&(e.addEventListener(`change`,e=>{e.currentTarget instanceof HTMLSelectElement&&(window.location.pathname=e.currentTarget.value)}),window.addEventListener(`pageshow`,t=>{if(!t.persisted)return;let n=e.querySelector(`option[selected]`)?.index;n!==e.selectedIndex&&(e.selectedIndex=n??0)}))}};customElements.define(`starlight-lang-select`,e);</script></div></div></header><nav class="sidebar print:hidden astro-gqpr5s5a" aria-label="Main"><starlight-menu-button class="print:hidden astro-vvx7mffu"><button aria-expanded="false" aria-label="Menu" aria-controls="starlight__sidebar" class="sl-flex md:sl-hidden astro-vvx7mffu"><svg aria-hidden="true" class="open-menu astro-vvx7mffu astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M3 8h18a1 1 0 1 0 0-2H3a1 1 0 0 0 0 2Zm18 8H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Zm0-5H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Z"/></svg><svg aria-hidden="true" class="close-menu astro-vvx7mffu astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="m13.41 12 6.3-6.29a1.004 1.004 0 1 0-1.42-1.42L12 10.59l-6.29-6.3a1.004 1.004 0 0 0-1.42 1.42l6.3 6.29-6.3 6.29a1 1 0 0 0 0 1.42.998.998 0 0 0 1.42 0l6.29-6.3 6.29 6.3a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.42L13.41 12Z"/></svg></button></starlight-menu-button><script type="module">var e=class extends HTMLElement{btn=this.querySelector(`button`);constructor(){super(),this.btn.addEventListener(`click`,()=>this.toggleExpanded());let e=this.closest(`nav`);e&&e.addEventListener(`keyup`,e=>this.closeOnEscape(e)),matchMedia(`(min-width: 50em)`).addEventListener(`change`,()=>this.setExpanded(!1))}setExpanded(e){this.setAttribute(`aria-expanded`,String(e)),document.body.toggleAttribute(`data-mobile-menu-expanded`,e),document.querySelectorAll(`.main-frame, .sl-skip-link`).forEach(t=>{t.toggleAttribute(`inert`,e)})}toggleExpanded(){this.setExpanded(this.getAttribute(`aria-expanded`)!==`true`)}closeOnEscape(e){e.code===`Escape`&&(this.setExpanded(!1),this.btn.focus())}};customElements.define(`starlight-menu-button`,e);</script><div id="starlight__sidebar" class="sidebar-pane astro-gqpr5s5a"><div class="sidebar-content sl-flex astro-gqpr5s5a"><sl-sidebar-state-persist data-hash="1sb7buv" class="astro-f5yvicm7"><script aria-hidden="true">
+		(() => {
+			try {
+				if (!matchMedia('(min-width: 50em)').matches) return;
+				/** @type {HTMLElement | null} */
+				const target = document.querySelector('sl-sidebar-state-persist');
+				const state = JSON.parse(sessionStorage.getItem('sl-sidebar-state') || '0');
+				if (!target || !state || target.dataset.hash !== state.hash) return;
+				window._starlightScrollRestore = state.scroll;
+				customElements.define(
+					'sl-sidebar-restore',
+					class SidebarRestore extends HTMLElement {
+						connectedCallback() {
+							try {
+								const idx = parseInt(this.dataset.index || '');
+								const details = this.closest('details');
+								if (details && typeof state.open[idx] === 'boolean') details.open = state.open[idx];
+							} catch {}
+						}
+					}
+				);
+			} catch {}
+		})();
+	</script><ul class="top-level astro-ojxuodky"><li class="astro-ojxuodky"><details open class="astro-ojxuodky"><summary class="astro-ojxuodky"><span class="group-label astro-ojxuodky"><span class="large astro-ojxuodky">📰 新闻动态</span></span><svg aria-hidden="true" class="caret astro-ojxuodky astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="0"></sl-sidebar-restore><ul class="astro-ojxuodky"><li class="astro-ojxuodky"><a href="/news/site-launched/" class="astro-ojxuodky"><span class="astro-ojxuodky">OpenGood 站点上线</span></a></li></ul></details></li><li class="astro-ojxuodky"><details open class="astro-ojxuodky"><summary class="astro-ojxuodky"><span class="group-label astro-ojxuodky"><span class="large astro-ojxuodky">🛠️ 技术方案</span></span><svg aria-hidden="true" class="caret astro-ojxuodky astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="1"></sl-sidebar-restore><ul class="astro-ojxuodky"><li class="astro-ojxuodky"><a href="/tech/build-personal-site/" class="astro-ojxuodky"><span class="astro-ojxuodky">从零搭建 Astro + Starlight 个人站点（GitHub Pages + 自定义域名）</span></a></li><li class="astro-ojxuodky"><a href="/tech/constellation-background/" class="astro-ojxuodky"><span class="astro-ojxuodky">给首页加粒子连线背景动效（Constellation）</span></a></li><li class="astro-ojxuodky"><a href="/tech/minicpm-o-45-昇腾-910c-部署上手指南/" class="astro-ojxuodky"><span class="astro-ojxuodky">MiniCPM-o 4.5 昇腾 910C 部署上手指南</span></a></li><li class="astro-ojxuodky"><a href="/tech/minicpm-omni-910b-perf-test-recap/" class="astro-ojxuodky"><span class="astro-ojxuodky">MiniCPM-o 4.5 昇腾 910B 推理优化：双工 RTF 与三项 Benchmark 测试复盘</span></a></li><li class="astro-ojxuodky"><a href="/tech/minicpm-omni-optimization-methodology/" class="astro-ojxuodky"><span class="astro-ojxuodky">把 RTF 从 1.087 压到 0.68：一次推理性能优化的全过程、层次与方法</span></a></li><li class="astro-ojxuodky"><a href="/tech/minicpm-昇腾挑战赛--高性能推理优化赛道--评测规范说明/" class="astro-ojxuodky"><span class="astro-ojxuodky">MiniCPM 昇腾挑战赛 · 高性能推理优化赛道 — 评测规范说明</span></a></li><li class="astro-ojxuodky"><a href="/tech/rss-and-categories/" class="astro-ojxuodky"><span class="astro-ojxuodky">给 OpenGood 加上「内容分类」与「RSS 订阅」</span></a></li><li class="astro-ojxuodky"><a href="/tech/sidebar-emoji-border/" class="astro-ojxuodky"><span class="astro-ojxuodky">侧边栏分组加 emoji 图标 + 虚线框微调</span></a></li><li class="astro-ojxuodky"><a href="/tech/sidebar-tech-border/" class="astro-ojxuodky"><span class="astro-ojxuodky">给侧边栏某个分组的文章标题加自定义边框</span></a></li><li class="astro-ojxuodky"><a href="/tech/在昇腾-npu-上使用-vllm-omni部署-minicpm-o-45/" class="astro-ojxuodky"><span class="astro-ojxuodky">在昇腾 NPU 上使用 vllm-omni部署 MiniCPM-o 4.5</span></a></li><li class="astro-ojxuodky"><a href="/tech/面壁大赛群-qa-整理/" aria-current="page" class="astro-ojxuodky"><span class="astro-ojxuodky">面壁大赛群 QA 整理</span></a></li></ul></details></li><li class="astro-ojxuodky"><details open class="astro-ojxuodky"><summary class="astro-ojxuodky"><span class="group-label astro-ojxuodky"><span class="large astro-ojxuodky">🚀 项目</span></span><svg aria-hidden="true" class="caret astro-ojxuodky astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="2"></sl-sidebar-restore><ul class="astro-ojxuodky"><li class="astro-ojxuodky"><a href="/projects/learn-ascendc-operator/" class="astro-ojxuodky"><span class="astro-ojxuodky">learn-ascendc-operator</span></a></li></ul></details></li><li class="astro-ojxuodky"><a href="/about/" class="large astro-ojxuodky"><span class="astro-ojxuodky">👋 关于我</span></a></li></ul><script aria-hidden="true">
+		(() => {
+			const scroller = document.getElementById('starlight__sidebar');
+			if (!window._starlightScrollRestore || !scroller) return;
+			scroller.scrollTop = window._starlightScrollRestore;
+			delete window._starlightScrollRestore;
+		})();
+	</script></sl-sidebar-state-persist><div class="md:sl-hidden"><div class="mobile-preferences sl-flex astro-b5gddk54"><div class="social-icons astro-b5gddk54"><a href="https://github.com/hujinnvshi/oghub" rel="me" class="sl-flex astro-cg55etiy"><span class="sr-only astro-cg55etiy">GitHub</span><svg aria-hidden="true" class="astro-cg55etiy astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a><a href="/rss.xml" rel="me" class="sl-flex astro-cg55etiy"><span class="sr-only astro-cg55etiy">RSS</span><svg aria-hidden="true" class="astro-cg55etiy astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M2.88 16.88a3 3 0 0 0 0 4.24 3 3 0 0 0 4.24 0 3 3 0 0 0-4.24-4.24Zm2.83 2.83a1 1 0 0 1-1.42-1.42 1 1 0 0 1 1.42 0 1 1 0 0 1 0 1.42ZM5 12a1 1 0 0 0 0 2 5 5 0 0 1 5 5 1 1 0 0 0 2 0 7 7 0 0 0-7-7Zm0-4a1 1 0 0 0 0 2 9 9 0 0 1 9 9 1 1 0 0 0 2 0 11.08 11.08 0 0 0-3.22-7.78A11.08 11.08 0 0 0 5 8Zm10.61.39A15.11 15.11 0 0 0 5 4a1 1 0 0 0 0 2 13 13 0 0 1 13 13 1 1 0 0 0 2 0 15.11 15.11 0 0 0-4.39-10.61Z"/></svg></a></div><starlight-theme-select><label style="--sl-select-width: 6.25em" class="astro-r2p65idu"><span class="sr-only astro-r2p65idu">Select theme</span><svg aria-hidden="true" class="icon label-icon astro-r2p65idu astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg><select autocomplete="off" class="astro-r2p65idu"><option value="dark" class="astro-r2p65idu">Dark</option><option value="light" class="astro-r2p65idu">Light</option><option value="auto" selected class="astro-r2p65idu">Auto</option></select><svg aria-hidden="true" class="icon caret astro-r2p65idu astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg></label></starlight-theme-select><script>
+	StarlightThemeProvider.updatePickers();
+</script></div></div></div></div></nav><div class="main-frame astro-gqpr5s5a"><script type="module">var e=document.getElementById(`starlight__sidebar`),t=e?.querySelector(`sl-sidebar-state-persist`),n=`sl-sidebar-state`,r=()=>{let r=[],i=t?.dataset.hash||``;try{let e=sessionStorage.getItem(n),t=JSON.parse(e||`{}`);Array.isArray(t.open)&&t.hash===i&&(r=t.open)}catch{}return{hash:i,open:r,scroll:e?.scrollTop||0}},i=e=>{try{sessionStorage.setItem(n,JSON.stringify(e))}catch{}},a=()=>i(r()),o=(e,t)=>{let n=r();n.open[t]=e,i(n)};t?.addEventListener(`click`,e=>{if(!(e.target instanceof Element))return;let t=e.target.closest(`summary`)?.closest(`details`);if(!t)return;let n=t.querySelector(`sl-sidebar-restore`),r=parseInt(n?.dataset.index||``);isNaN(r)||o(!t.open,r)}),addEventListener(`visibilitychange`,()=>{document.visibilityState===`hidden`&&a()});</script><div class="lg:sl-flex astro-abfeecmu"><aside class="right-sidebar-container print:hidden astro-abfeecmu"><div class="right-sidebar astro-abfeecmu"><div class="lg:sl-hidden astro-q5mffni3"><mobile-starlight-toc data-min-h="2" data-max-h="3" class="astro-5ulgm6bh"><nav aria-labelledby="starlight__on-this-page--mobile" class="astro-5ulgm6bh"><details id="starlight__mobile-toc" class="astro-5ulgm6bh"><summary id="starlight__on-this-page--mobile" class="sl-flex astro-5ulgm6bh"><span class="toggle sl-flex astro-5ulgm6bh">On this page<svg aria-hidden="true" class="caret astro-5ulgm6bh astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></span><span class="display-current astro-5ulgm6bh"></span></summary><div class="dropdown astro-5ulgm6bh"><ul class="isMobile astro-cxyftcne" style="--depth: 0;"><li style="--depth: 0;" class="astro-cxyftcne"><a href="#_top" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">Overview</span></a></li></ul></div></details></nav></mobile-starlight-toc><script type="module" src="/_astro/MobileTableOfContents.astro_astro_type_script_index_0_lang.BcSo_yiZ.js"></script></div><div class="right-sidebar-panel sl-hidden lg:sl-block astro-q5mffni3"><div class="sl-container astro-q5mffni3"><starlight-toc data-min-h="2" data-max-h="3"><nav aria-labelledby="starlight__on-this-page"><h2 id="starlight__on-this-page">On this page</h2><ul class="astro-cxyftcne" style="--depth: 0;"><li style="--depth: 0;" class="astro-cxyftcne"><a href="#_top" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">Overview</span></a></li></ul></nav></starlight-toc><script type="module" src="/_astro/TableOfContents.astro_astro_type_script_index_0_lang.Csloo1VZ.js"></script></div></div></div></aside><div class="main-pane astro-abfeecmu"><main data-pagefind-body class="astro-vdxcvpsm" lang="en" dir="ltr"><div class="content-panel astro-oil7k7jf"><div class="sl-container astro-oil7k7jf"><h1 id="_top" class="astro-2sm4b3ln">面壁大赛群 QA 整理</h1></div></div><div class="content-panel astro-oil7k7jf"><div class="sl-container astro-oil7k7jf"><div class="sl-markdown-content"><div class="sl-heading-wrapper level-h1"><h1 id="面壁大赛群-qa-整理">面壁大赛群 QA 整理</h1><a class="sl-anchor-link" href="#面壁大赛群-qa-整理"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “面壁大赛群 QA 整理”</span></a></div>
+<p><strong>【问题】</strong>**  【官方回答】****  【客户端排查建议】**</p>
+<p><strong>Q1. DevEnv_493092 的 user_data 丢了，疑似被挂载到 deleted</strong></p>
+<p><strong>【官方回答】</strong>（暂无官方回复，请参考下方排查建议或联系官方处理）</p>
+<p><strong>【客户端排查建议】</strong></p>
+<ul>
+<li>
+<p>检查挂载状态：执行 df -h 查看 user_data 目录是否仍然挂载在正确位置。</p>
+</li>
+<li>
+<p>检查目录内容：执行 ls -la /home/ma-user/work/user_data/ 确认数据是否真的丢失，还是仅挂载路径变化。</p>
+</li>
+<li>
+<p>检查环境状态：在管理页面确认该环境是否被意外标记为「已删除」状态。</p>
+</li>
+<li>
+<p>查看系统日志：执行 dmesg | tail -50 查看是否有存储相关的内核错误。</p>
+</li>
+<li>
+<p>若确认数据丢失，记录环境名称 DevEnv_493092 和公网 IP，联系官方协助恢复。</p>
+</li>
+<li>
+<p>预防建议：后续重要数据请同步保存到 shared_assets/ 共享空间，避免仅依赖 user_data。</p>
+</li>
+</ul>
+<p><strong>Q2. 线上 container 提示 GlusterFS 故障，数据丢了……</strong></p>
+<p><strong>【官方回答】</strong>（暂无官方回复，请参考下方排查建议或联系官方处理）</p>
+<p><strong>【客户端排查建议】</strong></p>
+<ul>
+<li>
+<p>检查 GlusterFS 挂载状态：执行 mount | grep gluster 确认存储是否正常挂载。</p>
+</li>
+<li>
+<p>查看系统日志：执行 dmesg | grep -i gluster 查找 GlusterFS 相关错误信息。</p>
+</li>
+<li>
+<p>检查容器状态：执行 docker ps -a 或 kubectl get pods 查看容器运行状态。</p>
+</li>
+<li>
+<p>尝试重新挂载：若挂载点丢失，可尝试 mount -a 重新挂载所有文件系统。</p>
+</li>
+<li>
+<p>若无法恢复，记录环境名称和公网 IP，联系官方排查 GlusterFS 后端故障。</p>
+</li>
+<li>
+<p>预防建议：关键模型权重和数据及时备份到 shared_assets/ 共享目录。</p>
+</li>
+</ul>
+<p><strong>Q3. 418 问题怎么解决</strong></p>
+<p>**【官方回答】 **提供公网 IP 地址、环境名称，联系我们处理。</p>
+<p><img src="https://internal-api-drive-stream.feishu.cn/space/api/box/stream/download/authcode/?code=MDdkOWU5NmFkMjVlZGNhMDZhNzEyZjUxOWI0YWFiZjBfYzQ5OGZlMGQ5NzM0MDAwODQ1OGZlMDk4MGY1NTk2ZTNfSUQ6NzY2ODYwODIwMjY0OTYxOTc1Nl8xNzg2MDY5ODExOjE3ODYxNTYyMTFfVjM" alt="Image"></p>
+<p><strong>【客户端排查建议】</strong></p>
+<ul>
+<li>
+<p>清除浏览器缓存和 Cookie 后重新访问页面。</p>
+</li>
+<li>
+<p>尝试使用浏览器无痕/隐私模式（Chrome: Ctrl+Shift+N）访问。</p>
+</li>
+<li>
+<p>检查网络代理设置：关闭 VPN、代理软件后重试。</p>
+</li>
+<li>
+<p>更换网络环境测试：切换到手机热点或其他网络确认是否为网络问题。</p>
+</li>
+<li>
+<p>查询当前公网 IP：在终端执行 curl ifconfig.me 或 curl cip.cc。</p>
+</li>
+<li>
+<p>若以上均无效，截图报错页面，提供公网 IP 和环境名称联系官方处理。</p>
+</li>
+</ul>
+<p><strong>Q5. ssh: Could not resolve hostname openlibing-devenv-858221: 不知道这样的主机。过程试图写入的管道不存在。请问这个报错咋办</strong></p>
+<p>**【官方回答】 **提供「开发环境名称」、「SSH 版本」，需要我们定位。</p>
+<p><strong>【客户端排查建议】</strong></p>
+<ul>
+<li>
+<p>确认环境运行状态：在管理页面确认该开发环境是否处于「运行中」状态。</p>
+</li>
+<li>
+<p>检查 SSH 配置：执行 cat ~/.ssh/config 查看 SSH 配置是否正确。</p>
+</li>
+<li>
+<p>尝试使用 IP 直接连接：从管理页面获取环境 IP，用 ssh user@&lt;IP&gt; 替代 hostname 连接。</p>
+</li>
+<li>
+<p>检查本地 DNS 设置：执行 nslookup &lt;hostname&gt; 确认域名是否能解析。</p>
+</li>
+<li>
+<p>检查 SSH 版本：执行 ssh -V，确认使用较新版本的 SSH 客户端。</p>
+</li>
+<li>
+<p>若仍无法连接，记录环境名称和 SSH 版本，联系官方定位 DNS 解析问题。</p>
+</li>
+</ul>
+<p><strong>Q6. 请问为什么 WebIDE 会 403 呢</strong></p>
+<p>**【官方回答】 **前提：平台资源需要外网或者蓝区访问。若访问网站页面提示 403：提供公网 IP、个人信息、参赛信息，联系我们处理。若连接环境提示 403：尝试浏览器无痕模式或者清除浏览器缓存访问，若仍不行则提供环境名称给我们排查定位。</p>
+<p><img src="https://internal-api-drive-stream.feishu.cn/space/api/box/stream/download/authcode/?code=MDRmNDc2ZmM0OWZhYWFjYTQwYjk4NzEyNjM2Y2JlZWVfMGVjODA2ODUxZjFjMjc0NTNjYjZlNWMwYzhlYWE5YTZfSUQ6NzY2ODYwNzE2MTcxMDM0OTI0Ml8xNzg2MDY5ODExOjE3ODYxNTYyMTFfVjM" alt="Image"></p>
+<p><strong>【客户端排查建议】</strong></p>
+<ul>
+<li>
+<p>确认网络环境：确保在可访问外网或蓝区的网络下使用平台。</p>
+</li>
+<li>
+<p>尝试无痕模式：Chrome 按 Ctrl+Shift+N 打开无痕窗口访问。</p>
+</li>
+<li>
+<p>清除浏览器缓存和 Cookie：在浏览器设置中清除站点数据后重试。</p>
+</li>
+<li>
+<p>关闭代理/VPN：检查是否开启了代理软件，关闭后重试。</p>
+</li>
+<li>
+<p>更换浏览器：尝试使用 Chrome / Edge / Firefox 不同浏览器访问。</p>
+</li>
+<li>
+<p>重新登录账号：退出后重新登录，刷新会话状态。</p>
+</li>
+<li>
+<p>若以上均无效，提供公网 IP、环境名称和参赛信息联系官方处理。</p>
+</li>
+</ul>
+<p><strong>Q7. 打开 WebIDE 看到 502 Bad Gateway</strong></p>
+<p>**【官方回答】 **页面白屏或者 502，提供环境名称，联系我们处理。</p>
+<p><img src="https://internal-api-drive-stream.feishu.cn/space/api/box/stream/download/authcode/?code=NmNmYjljMzFjMGE4OWM2ZTEyYWNmNjNlYjBlMjIzMjFfYWFiMDhlZGIzMjgwMTAwYjMwMGRiY2UyMGE0ZTljZmFfSUQ6NzY2ODYwNzA5ODk1OTQ2NTcxNF8xNzg2MDY5ODExOjE3ODYxNTYyMTFfVjM" alt="Image"></p>
+<p><strong>【客户端排查建议】</strong></p>
+<ul>
+<li>
+<p>强制刷新页面：按 Ctrl+F5 强制刷新，排除浏览器缓存问题。</p>
+</li>
+<li>
+<p>等待后重试：502 通常是临时服务波动，等待 1-2 分钟后重新访问。</p>
+</li>
+<li>
+<p>检查环境状态：在管理页面确认环境是否处于正常运行状态。</p>
+</li>
+<li>
+<p>清除浏览器缓存：清除后重新打开 WebIDE。</p>
+</li>
+<li>
+<p>尝试重连环境：在管理页面点击连接，尝试不同的连接方式。</p>
+</li>
+<li>
+<p>若持续 502，提供环境名称联系官方排查后端服务。</p>
+</li>
+</ul>
+<p><strong>Q8. 比赛环境是 CANN 9.0.0 还是 9.1.0？9.1 的话已经完成的工作有哪些迁移方式？</strong></p>
+<p><strong>【官方回答】</strong></p>
+<p>CANN 9.0.0 升级成 9.1.0 beta1 方法如下：</p>
+<ol>
+<li>
+<p>在机器上通过 uname -a 确认自己的机器是 aarch64 还是 x86_64。</p>
+</li>
+<li>
+<p>在 <a href="https://www%5C.hiascend%5C.com/developer/download/community/result?module=cann%5C&amp;cann=9%5C.1%5C.0%5C-beta%5C.1%E4%B8%8B%E8%BD%BD%E9%9C%80%E8%A6%81%E7%9A%84">https://www\.hiascend\.com/developer/download/community/result?module=cann\&amp;cann=9\.1\.0\-beta\.1下载需要的</a> CANN 版本软件包（建议下载Ascend-cann-toolkit_9.1.0-beta.1_linux-aarch64.run）。</p>
+</li>
+</ol>
+<p><img src="https://internal-api-drive-stream.feishu.cn/space/api/box/stream/download/authcode/?code=ODhhNGJkZTQ0YzI4ODgzOGFlMDFkNmM0MzQ4ZjdkOGZfNGMzZDk0YmE1YmNiZGRiZmEwYzUyNWYxNWE5Y2ZlOWNfSUQ6NzY3MDM2MjcwNTEzNTkxMzkyNF8xNzg2MDY5ODExOjE3ODYxNTYyMTFfVjM" alt="Image"></p>
+<ol start="3">
+<li>
+<p>先赋予 run 包执行权限：chmod +x xxx.run</p>
+</li>
+<li>
+<p>用 run 包执行时添加更新参数：./xxx.run --upgrade</p>
+</li>
+<li>
+<p>出现类似 [xxx upgrade success] 即更新成功。</p>
+</li>
+<li>
+<p>用命令【sed -i ‘s|/usr/local/Ascend/cann-9.0.0|/usr/local/Ascend/cann-9.1.0-beta.1|g’ ~/.bashrc】更新一下.bashrc确保每次启动终端都会执行cann的set_env.sh脚本</p>
+</li>
+<li>
+<p>不管是升版本还是降版本均可用这个方法。</p>
+</li>
+</ol>
+<p><strong>【客户端排查建议】</strong></p>
+<ul>
+<li>
+<p>确认当前 CANN 版本：cat /usr/local/Ascend/ascend-toolkit/latest/version.cfg</p>
+</li>
+<li>
+<p>确认机器架构：uname -a（区分 aarch64 / x86_64）</p>
+</li>
+<li>
+<p>确认 NPU 驱动版本：npu-smi info，确保驱动与目标 CANN 版本兼容</p>
+</li>
+<li>
+<p>备份当前环境数据：将重要代码和数据同步到 shared_assets/ 共享空间</p>
+</li>
+<li>
+<p>下载对应架构的 CANN run 包，执行 chmod +x 赋予执行权限</p>
+</li>
+<li>
+<p>执行 ./xxx.run --upgrade 进行版本升级/降级</p>
+</li>
+<li>
+<p>升级后验证：python -c “import acl; print(‘ACL OK’)” 确认 CANN 可用</p>
+</li>
+<li>
+<p>若升级失败，查看 /var/log/ascend_seclog/ 下的日志定位原因</p>
+</li>
+</ul>
+<p><strong>Q9. 可以帮我看下这个开发环境吗？试了 WebIDE 和 VSCode 都连接不上，想删了新建也删不掉。DevEnv_928461</strong></p>
+<p><strong>【官方回答】</strong>（暂无官方回复，请参考下方排查建议或联系官方处理）</p>
+<p><strong>【客户端排查建议】</strong></p>
+<ul>
+<li>
+<p>检查环境状态：在管理页面确认 DevEnv_928461 是否处于「运行中」状态。</p>
+</li>
+<li>
+<p>尝试强制刷新管理页面后重新点击删除按钮。</p>
+</li>
+<li>
+<p>清除浏览器缓存后重试删除操作。</p>
+</li>
+<li>
+<p>检查网络连通性：在终端执行 ping &lt;环境IP&gt; 确认网络是否可达。</p>
+</li>
+<li>
+<p>尝试更换连接方式：如果 WebIDE 和 VSCode 都不行，尝试 SSH 命令行连接。</p>
+</li>
+<li>
+<p>若环境卡在异常状态无法删除，提供环境名称 DevEnv_928461 联系官方协助删除。</p>
+</li>
+</ul>
+<p><strong>Q10. 请问容器初始化发现驱动不识别，是否可以重置系统呢？</strong></p>
+<p><strong>【官方回答】</strong>（暂无官方回复，请参考下方排查建议或联系官方处理）</p>
+<p><img src="https://internal-api-drive-stream.feishu.cn/space/api/box/stream/download/authcode/?code=NjAxMjZjODg0MGZlMGI1ODU3NmJmMzRjYTRhMmFjMzZfZDZmNzQzZjQ0MGJlMmZjNzA0OGVmNzcxN2RkMDU0MjJfSUQ6NzY2ODYwNzAwODk5MTYxMjE2OV8xNzg2MDY5ODExOjE3ODYxNTYyMTFfVjM" alt="Image"></p>
+<p><strong>【客户端排查建议】</strong></p>
+<ul>
+<li>
+<p>检查 NPU 驱动状态：执行 npu-smi info 确认 NPU 是否被识别。</p>
+</li>
+<li>
+<p>查看驱动日志：执行 dmesg | grep -i ascend 查找驱动相关错误。</p>
+</li>
+<li>
+<p>检查 CANN 与驱动版本兼容性：确认 CANN 版本和 NPU 驱动版本是否匹配。</p>
+</li>
+<li>
+<p>检查内核版本：执行 uname -r，确认内核是否与驱动兼容。</p>
+</li>
+<li>
+<p>尝试销毁当前环境后重新创建（选择与官方推荐一致的镜像和 CANN 版本）。</p>
+</li>
+<li>
+<p>若重创后仍不识别，截图 npu-smi 输出和报错信息，提供环境名称联系官方。</p>
+</li>
+</ul>
+<p><strong>Q11. user_data 目录的数据不能持久保存吗？为什么断开链接了但没删环境，重新链接之后 user_data 空了？</strong></p>
+<p><strong>【官方回答】</strong>（暂无官方回复，请参考下方排查建议或联系官方处理）</p>
+<p><strong>【客户端排查建议】</strong></p>
+<ul>
+<li>
+<p>确认环境未被删除：在管理页面确认环境仍存在，只是断开了连接。</p>
+</li>
+<li>
+<p>检查挂载点：执行 df -h 和 mount | grep user_data 确认存储是否正常挂载。</p>
+</li>
+<li>
+<p>检查数据目录：执行 ls -la /home/ma-user/work/user_data/ 确认文件是否存在。</p>
+</li>
+<li>
+<p>查看隐藏文件：执行 ls -laR /home/ma-user/work/ 查看完整目录结构。</p>
+</li>
+<li>
+<p>检查是否有多个挂载点冲突：执行 mount 查看是否有重复挂载导致数据被遮盖。</p>
+</li>
+<li>
+<p>若数据确实丢失，提供环境名称联系官方排查存储问题。</p>
+</li>
+<li>
+<p>预防建议：重要数据请保存到 shared_assets/ 而非 user_data，避免数据丢失风险。</p>
+</li>
+</ul>
+<p><strong>Q12. 我今天也是连不上，DevEnv_642647</strong></p>
+<p><strong>【官方回答】</strong>（暂无官方回复，请参考下方排查建议或联系官方处理）</p>
+<p><img src="https://internal-api-drive-stream.feishu.cn/space/api/box/stream/download/authcode/?code=YmM1MzY2MGEyNGU3MTA4N2I5NTcyYmMyMWFhZGExMWFfMzQ4ZTRlOTgzMzNlZTk4ZTZkZTFmZWQ2M2RjYWI3OGFfSUQ6NzY2ODYwNjk1NDAyNjA2MDc4MV8xNzg2MDY5ODExOjE3ODYxNTYyMTFfVjM" alt="Image"></p>
+<p><strong>【客户端排查建议】</strong></p>
+<ul>
+<li>
+<p>确认环境状态：在管理页面确认 DevEnv_642647 是否处于「运行中」状态。</p>
+</li>
+<li>
+<p>尝试重连环境：在管理页面点击连接按钮，选择不同的方式尝试重新连接。</p>
+</li>
+<li>
+<p>检查网络连通性：在终端执行 ping &lt;环境IP&gt; 确认网络是否可达。</p>
+</li>
+<li>
+<p>尝试不同连接方式：依次尝试 WebIDE、VSCode Remote-SSH、终端 SSH 连接。</p>
+</li>
+<li>
+<p>检查本地网络：确认本地网络稳定，无防火墙/代理阻断。</p>
+</li>
+<li>
+<p>若仍连不上，截图报错信息，提供环境名称 DevEnv_642647 联系官方排查。</p>
+</li>
+</ul>
+<p><strong>Q13. 报异常</strong></p>
+<p>**【官方回答】 **提供公网 IP 地址、开发环境名称，联系我们处理。</p>
+<p><img src="https://internal-api-drive-stream.feishu.cn/space/api/box/stream/download/authcode/?code=MDk4YzU3N2EwYzg4M2FkNWZhZjY2NDQwNGFmZjRkYmZfOTg1ZDk3NjhiYmQ0MTZhZGYzMzMzYTZjOThhMmU1NGVfSUQ6NzY2ODYwNjg5OTQ3NDIyMjAzN18xNzg2MDY5ODExOjE3ODYxNTYyMTFfVjM" alt="Image"></p>
+<p><img src="https://internal-api-drive-stream.feishu.cn/space/api/box/stream/download/authcode/?code=OGZiZWM2Y2QzZDA5MmVlMDc0NDMyMTNkMzFjMWE0MjJfYTQ3ZjI1NTZkZjUyYTBhMzJhMzRlYzVjMzMxOWY2NDlfSUQ6NzY2ODYwNzMyMzU4NTM5OTc3OF8xNzg2MDY5ODExOjE3ODYxNTYyMTFfVjM" alt="Image"></p>
+<p><strong>【客户端排查建议】</strong></p>
+<ul>
+<li>
+<p>截取完整的异常报错信息（包括错误码、堆栈等）。</p>
+</li>
+<li>
+<p>检查环境运行状态：在管理页面确认环境是否正常运行。</p>
+</li>
+<li>
+<p>尝试重连环境：点击连接后观察异常是否消失，或者换别的方式连接。</p>
+</li>
+<li>
+<p>提供环境名称、公网 IP 和完整报错截图，联系官方处理。</p>
+</li>
+</ul>
+<p><strong>Q14. 这个一直显示「连接中」，然后无法连接是为什么呢？等了 5 分钟了。DevEnv_524700</strong></p>
+<p>**【官方回答】 **提供开发环境名称，联系我们排查。</p>
+<p><img src="https://internal-api-drive-stream.feishu.cn/space/api/box/stream/download/authcode/?code=ODMyNTE0ZmEzZTllNzI3ZWJmZWFmNjFhYjI3MzdjNjFfYTVmZjQ3MTEyYjBhZDgwN2MwYmE2MTBhNjI3ZThiYjlfSUQ6NzY2ODYwNjg2MDUxNzI2NDM0M18xNzg2MDY5ODExOjE3ODYxNTYyMTFfVjM" alt="Image"></p>
+<p><strong>【客户端排查建议】</strong></p>
+<ul>
+<li>
+<p>继续等待 3-5 分钟：有时资源调度需要较长时间，耐心等待看是否自动恢复。</p>
+</li>
+<li>
+<p>取消连接后重新尝试：点击取消按钮，等待 30 秒后重新点击连接。</p>
+</li>
+<li>
+<p>检查网络稳定性：确认本地网络无波动，尝试切换网络后重试。</p>
+</li>
+<li>
+<p>尝试更换连接方式：若 WebIDE 卡住，尝试 VSCode 或 SSH 连接。</p>
+</li>
+<li>
+<p>检查环境资源状态：确认环境是否处于「创建中」或「异常」状态。</p>
+</li>
+<li>
+<p>若持续无法连接，提供环境名称 DevEnv_524700 联系官方排查。</p>
+</li>
+</ul>
+<p><strong>Q15. 开了个 4 卡的机器，但是环境一直在创建。能不能取消了呢？DevEnv_748981</strong></p>
+<p><strong>【官方回答】</strong>（暂无官方回复，请参考下方排查建议或联系官方处理）</p>
+<p><img src="https://internal-api-drive-stream.feishu.cn/space/api/box/stream/download/authcode/?code=ZTk0MzgzMDJkMDYzY2I0YmI0YTIxYTQzNTM0NTZkMzBfNzViNWRjMmI0YjRhZTU5YmMzNjMzZDY4ZmRkNjdiMTJfSUQ6NzY2ODYwNjgwMjY1MzYxMzMwN18xNzg2MDY5ODExOjE3ODYxNTYyMTFfVjM" alt="Image"></p>
+<p><strong>【客户端排查建议】</strong></p>
+<ul>
+<li>
+<p>继续等待 5-10 分钟：4 卡资源创建通常比单卡更慢，多卡调度需要时间。</p>
+</li>
+<li>
+<p>检查资源配额：在管理页面确认卡时配额是否足够支撑 4 卡环境。</p>
+</li>
+<li>
+<p>尝试在管理页面取消创建：查看是否有「取消」或「删除」按钮。</p>
+</li>
+<li>
+<p>若无法取消：等待创建超时自动失败后，资源会自动释放。</p>
+</li>
+<li>
+<p>若卡时持续消耗，提供环境名称 DevEnv_748981 联系官方协助取消。</p>
+</li>
+<li>
+<p>后续建议：开发阶段先用 1 卡环境，需要多卡测试时再创建 4 卡环境，节省卡时。</p>
+</li>
+</ul>
+<p><strong>Q16. 无法正常连接到 VSCode，链接报错：连接环境失败: Client network socket disconnected before secure TLS connection was established</strong></p>
+<p><strong>【官方回答】</strong>（暂无官方回复，请参考下方排查建议或联系官方处理）</p>
+<p><strong>【客户端排查建议】</strong></p>
+<ul>
+<li>
+<p>检查网络稳定性：TLS 握手失败通常是网络波动导致，尝试切换网络后重试。</p>
+</li>
+<li>
+<p>更新 VSCode：确保使用最新版本的 VSCode（Help → Check for Updates）。</p>
+</li>
+<li>
+<p>更新 Remote-SSH 扩展：在扩展面板中检查并更新 Remote-SSH 插件。</p>
+</li>
+<li>
+<p>查看详细 SSH 日志：在终端执行 ssh -v &lt;环境地址&gt; 查看详细连接日志定位问题。</p>
+</li>
+<li>
+<p>检查防火墙/代理：关闭本地防火墙或代理软件后重试。</p>
+</li>
+<li>
+<p>尝试调整 SSH 超时设置：在 SSH 配置中添加 ServerAliveInterval 60 保持连接。</p>
+</li>
+<li>
+<p>若持续失败，提供环境名称和完整报错信息联系官方排查。</p>
+</li>
+</ul>
+<hr>
+<p><strong>容器内部使用报错例如【容器初始化发现驱动不识别】经过上述排查处理还是不正常，且不想删除容器的情况下，在右侧可以提在线工单由内部人员处理</strong></p>
+<p><img src="https://internal-api-drive-stream.feishu.cn/space/api/box/stream/download/authcode/?code=NGVlZjBhNTViYjI0YmE0OWYwNDE4MzU0OTNmZmEwOGJfODExODhiMTY3M2RlY2YyOTM3YzEyOWRhOTc2ZTgxYTJfSUQ6NzY2ODYwNjY5MDU5NDczNzEzMV8xNzg2MDY5ODExOjE3ODYxNTYyMTFfVjM" alt="Image"></p>
+<p><strong>类似502，418，403的问题按照建议多次尝试过后还无法处理，可以在如下网址中提工单解决问题类型输入【开发资源/HiDevLab-在线开发】记得按照对应提示提供对应的环境信息</strong></p>
+<p><a href="https://www.hiascend.com/feedback/add?referrer=/support">https://www.hiascend.com/feedback/add?referrer=/support</a></p>
+<p><img src="https://internal-api-drive-stream.feishu.cn/space/api/box/stream/download/authcode/?code=MTJhYTM0ODQxOTdhYzJhODgxZmU5MTA1OTQ2YjI3MDVfYTQ0M2Q0YTlkYmZkM2QyNjgxNTVkYWMwNmZiY2Q0NDFfSUQ6NzY2ODYwNjcyNTY2NjI0NTYwOF8xNzg2MDY5ODExOjE3ODYxNTYyMTFfVjM" alt="Image"></p>
+<p>提交工单后，需要关注工单信息可以在昇腾社区-&gt;支持与服务-&gt;开发者支持与服务-&gt;技术工单-&gt;查看工单</p>
+<p><a href="https://www%5C.hiascend%5C.com/support">https://www\.hiascend\.com/support</a></p>
+<p><img src="https://internal-api-drive-stream.feishu.cn/space/api/box/stream/download/authcode/?code=MWZiYmI3ZTI3YjIzMTVhNjAwODBkZGU1Y2Y5NTBmOTJfMjQ0OGY5MWM0OWUxZWU2OTg4ODNiNGEwNDc1MzdiMjNfSUQ6NzY2OTcwODEzNTIyNjAxODc3M18xNzg2MDY5ODExOjE3ODYxNTYyMTFfVjM" alt="Image"></p>
+<p>查看工单页面</p>
+<p><a href="https://www%5C.hiascend%5C.com/feedback">https://www\.hiascend\.com/feedback</a></p>
+<p><img src="https://internal-api-drive-stream.feishu.cn/space/api/box/stream/download/authcode/?code=ZWE4YTg5MzAzZTBhYjEzZDNlM2M1Yzg2NmRjNDdlYzZfNTQxYTBiZDA0MGYyZTA1NGZhNTYwNDY2YTJhMjhlNGRfSUQ6NzY2OTcwODU1MzE3NDkyODU3MF8xNzg2MDY5ODExOjE3ODYxNTYyMTFfVjM" alt="Image"></p>
+</div><footer class="sl-flex astro-xhxjzfa7"><div class="meta sl-flex astro-xhxjzfa7"></div><div class="pagination-links print:hidden astro-jgq3vlii" dir="ltr"><a href="/tech/在昇腾-npu-上使用-vllm-omni部署-minicpm-o-45/" rel="prev" class="astro-jgq3vlii"><svg aria-hidden="true" class="astro-jgq3vlii astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.5rem;"><path d="M17 11H9.41l3.3-3.29a1.004 1.004 0 1 0-1.42-1.42l-5 5a1 1 0 0 0-.21.33 1 1 0 0 0 0 .76 1 1 0 0 0 .21.33l5 5a1.002 1.002 0 0 0 1.639-.325 1 1 0 0 0-.219-1.095L9.41 13H17a1 1 0 0 0 0-2Z"/></svg><span class="astro-jgq3vlii">Previous<br class="astro-jgq3vlii"><span class="link-title astro-jgq3vlii">在昇腾 NPU 上使用 vllm-omni部署 MiniCPM-o 4.5</span></span></a><a href="/projects/learn-ascendc-operator/" rel="next" class="astro-jgq3vlii"><svg aria-hidden="true" class="astro-jgq3vlii astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.5rem;"><path d="M17.92 11.62a1.001 1.001 0 0 0-.21-.33l-5-5a1.003 1.003 0 1 0-1.42 1.42l3.3 3.29H7a1 1 0 0 0 0 2h7.59l-3.3 3.29a1.002 1.002 0 0 0 .325 1.639 1 1 0 0 0 1.095-.219l5-5a1 1 0 0 0 .21-.33 1 1 0 0 0 0-.76Z"/></svg><span class="astro-jgq3vlii">Next<br class="astro-jgq3vlii"><span class="link-title astro-jgq3vlii">learn-ascendc-operator</span></span></a></div></footer></div></div></main></div></div></div></div></body></html>
