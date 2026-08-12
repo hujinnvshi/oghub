@@ -1,0 +1,233 @@
+<!DOCTYPE html><html lang="en" dir="ltr" data-theme="dark" data-has-toc data-has-sidebar class="astro-vdxcvpsm"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>用 msprof 剖析昇腾 910 的 matmul 与 transformer：算子链、AICore 占空比与 Roofline | OpenGood</title><link rel="canonical" href="https://github.opengood.cc/tech/ascend-npu-msprof-roofline/"/><link rel="sitemap" href="/sitemap-index.xml"/><link rel="shortcut icon" href="/favicon.svg" type="image/svg+xml"/><meta name="generator" content="Astro v7.1.6"/><meta name="generator" content="Starlight v0.41.7"/><meta property="og:title" content="用 msprof 剖析昇腾 910 的 matmul 与 transformer：算子链、AICore 占空比与 Roofline"/><meta property="og:type" content="article"/><meta property="og:url" content="https://github.opengood.cc/tech/ascend-npu-msprof-roofline/"/><meta property="og:locale" content="en"/><meta property="og:description" content="在 Atlas 800T A3 上用 CLI msprof 和 torch_npu.profiler 两条工具链剖析 matmul 与 12 层 transformer 前向——还原 torch op → aclnn → AICore 链路（aten::matmul → aclnnMatmul → 24 cube 核），实测 matmul 折算 298 TFLOPS≈算力打满、HBM 利用率仅 0.2%（纯计算受限）；transformer 分解出 34.6% 是 matmul、7% 是 aclnnFlashAttentionScore；并用实测数据画出 910 的 Roofline（matmul 顶到算力天花板、softmax 落在带宽斜线）。"/><meta property="og:site_name" content="OpenGood"/><meta name="twitter:card" content="summary_large_image"/><meta name="description" content="在 Atlas 800T A3 上用 CLI msprof 和 torch_npu.profiler 两条工具链剖析 matmul 与 12 层 transformer 前向——还原 torch op → aclnn → AICore 链路（aten::matmul → aclnnMatmul → 24 cube 核），实测 matmul 折算 298 TFLOPS≈算力打满、HBM 利用率仅 0.2%（纯计算受限）；transformer 分解出 34.6% 是 matmul、7% 是 aclnnFlashAttentionScore；并用实测数据画出 910 的 Roofline（matmul 顶到算力天花板、softmax 落在带宽斜线）。"/><link rel="alternate" type="application/rss+xml" title="OpenGood" href="/rss.xml"><script>
+	window.StarlightThemeProvider = (() => {
+		const storedTheme =
+			typeof localStorage !== 'undefined' && localStorage.getItem('starlight-theme');
+		const theme =
+			storedTheme ||
+			(window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+		document.documentElement.dataset.theme = theme === 'light' ? 'light' : 'dark';
+		return {
+			updatePickers(theme = storedTheme || 'auto') {
+				document.querySelectorAll('starlight-theme-select').forEach((picker) => {
+					const select = picker.querySelector('select');
+					if (select) select.value = theme;
+					/** @type {HTMLTemplateElement | null} */
+					const tmpl = document.querySelector(`#theme-icons`);
+					const newIcon = tmpl && tmpl.content.querySelector('.' + theme);
+					if (newIcon) {
+						const oldIcon = picker.querySelector('svg.label-icon');
+						if (oldIcon) {
+							oldIcon.replaceChildren(...newIcon.cloneNode(true).childNodes);
+						}
+					}
+				});
+			},
+		};
+	})();
+</script><template id="theme-icons"><svg aria-hidden="true" class="light astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M5 12a1 1 0 0 0-1-1H3a1 1 0 0 0 0 2h1a1 1 0 0 0 1-1Zm.64 5-.71.71a1 1 0 0 0 0 1.41 1 1 0 0 0 1.41 0l.71-.71A1 1 0 0 0 5.64 17ZM12 5a1 1 0 0 0 1-1V3a1 1 0 0 0-2 0v1a1 1 0 0 0 1 1Zm5.66 2.34a1 1 0 0 0 .7-.29l.71-.71a1 1 0 1 0-1.41-1.41l-.66.71a1 1 0 0 0 0 1.41 1 1 0 0 0 .66.29Zm-12-.29a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.71-.71a1.004 1.004 0 1 0-1.43 1.41l.73.71ZM21 11h-1a1 1 0 0 0 0 2h1a1 1 0 0 0 0-2Zm-2.64 6A1 1 0 0 0 17 18.36l.71.71a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.76-.66ZM12 6.5a5.5 5.5 0 1 0 5.5 5.5A5.51 5.51 0 0 0 12 6.5Zm0 9a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Zm0 3.5a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 0-1-1Z"/></svg><svg aria-hidden="true" class="dark astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.64 13a1 1 0 0 0-1.05-.14 8.049 8.049 0 0 1-3.37.73 8.15 8.15 0 0 1-8.14-8.1 8.59 8.59 0 0 1 .25-2A1 1 0 0 0 8 2.36a10.14 10.14 0 1 0 14 11.69 1 1 0 0 0-.36-1.05Zm-9.5 6.69A8.14 8.14 0 0 1 7.08 5.22v.27a10.15 10.15 0 0 0 10.14 10.14 9.784 9.784 0 0 0 2.1-.22 8.11 8.11 0 0 1-7.18 4.32v-.04Z"/></svg><svg aria-hidden="true" class="auto astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg></template><link rel="stylesheet" href="/_astro/print.ehPL0gv-.css" media="print"><link rel="stylesheet" href="/_astro/common.DJrPAfyb.css"><style>@layer starlight.components{.card:where(.astro-zts4jgjd){--sl-card-border:var(--sl-color-purple);--sl-card-bg:var(--sl-color-purple-low);border:1px solid var(--sl-color-gray-5);background-color:var(--sl-color-black);flex-direction:column;gap:clamp(.5rem,.125rem + 1vw,1rem);padding:clamp(1rem,.125rem + 3vw,2.5rem)}.card:where(.astro-zts4jgjd):nth-child(4n+1){--sl-card-border:var(--sl-color-orange);--sl-card-bg:var(--sl-color-orange-low)}.card:where(.astro-zts4jgjd):nth-child(4n+3){--sl-card-border:var(--sl-color-green);--sl-card-bg:var(--sl-color-green-low)}.card:where(.astro-zts4jgjd):nth-child(4n+4){--sl-card-border:var(--sl-color-red);--sl-card-bg:var(--sl-color-red-low)}.card:where(.astro-zts4jgjd):nth-child(4n+5){--sl-card-border:var(--sl-color-blue);--sl-card-bg:var(--sl-color-blue-low)}.title:where(.astro-zts4jgjd){font-weight:600;font-size:var(--sl-text-h4);color:var(--sl-color-white);line-height:var(--sl-line-height-headings);align-items:center;gap:1rem}.card:where(.astro-zts4jgjd) .icon:where(.astro-zts4jgjd){border:1px solid var(--sl-card-border);background-color:var(--sl-card-bg);border-radius:.25rem;flex-shrink:0;padding:.2em}.card:where(.astro-zts4jgjd) .body:where(.astro-zts4jgjd){font-size:clamp(var(--sl-text-sm), calc(.5rem + 1vw), var(--sl-text-body));margin:0}.card-grid:where(.astro-lmor3ela){grid-template-columns:100%;gap:1rem;display:grid}.card-grid:where(.astro-lmor3ela)>*{margin-top:0!important}@media (width>=50rem){.card-grid:where(.astro-lmor3ela){grid-template-columns:1fr 1fr;gap:1.5rem}.stagger:where(.astro-lmor3ela){--stagger-height:5rem;padding-bottom:var(--stagger-height)}.stagger:where(.astro-lmor3ela)>:nth-child(2n){transform:translateY(var(--stagger-height))}}}
+@layer starlight.components{svg:where(.astro-n5k4ipy7){color:var(--sl-icon-color);font-size:var(--sl-icon-size,1em);width:1em;height:1em}}
+</style><script type="module" src="/_astro/page.Dwipeu-R.js"></script></head><body class="astro-vdxcvpsm"><a class="sl-skip-link astro-vxeigawq" href="#_top">Skip to content</a><div class="page sl-flex astro-gqpr5s5a"><header class="header astro-gqpr5s5a"><div class="header astro-nczgtkxc"><div class="title-wrapper sl-flex astro-nczgtkxc"><a href="/" class="site-title sl-flex astro-clw6ags5"><img class="astro-clw6ags5" alt="OpenGood" src="/_astro/logo.j_QfFhns.svg" width="32" height="32"><span class="astro-clw6ags5" translate="no">OpenGood</span></a></div><div class="sl-flex print:hidden astro-nczgtkxc"><site-search class="astro-nczgtkxc astro-r5ar4xm7" data-translations="{&quot;placeholder&quot;:&quot;Search&quot;}"><button data-open-modal disabled aria-label="Search" aria-keyshortcuts="Control+K" class="astro-r5ar4xm7"><svg aria-hidden="true" class="astro-r5ar4xm7 astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.71 20.29 18 16.61A9 9 0 1 0 16.61 18l3.68 3.68a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.39ZM11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"/></svg><span class="sl-hidden md:sl-block astro-r5ar4xm7" aria-hidden="true">Search</span><kbd class="sl-hidden md:sl-flex astro-r5ar4xm7" style="display: none;"><kbd class="astro-r5ar4xm7">Ctrl</kbd><kbd class="astro-r5ar4xm7">K</kbd></kbd></button><dialog style="padding:0" aria-label="Search" class="astro-r5ar4xm7"><div class="dialog-frame sl-flex astro-r5ar4xm7"><button data-close-modal class="sl-flex md:sl-hidden astro-r5ar4xm7">Cancel</button><div class="search-container astro-r5ar4xm7"><div id="starlight__search" class="astro-r5ar4xm7"></div></div></div></dialog></site-search><script>
+	(() => {
+		const openBtn = document.querySelector('button[data-open-modal]');
+		const shortcut = openBtn?.querySelector('kbd');
+		if (!openBtn || !(shortcut instanceof HTMLElement)) return;
+		const platformKey = shortcut.querySelector('kbd');
+		if (platformKey && /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform)) {
+			platformKey.textContent = '⌘';
+			openBtn.setAttribute('aria-keyshortcuts', 'Meta+K');
+		}
+		shortcut.style.display = '';
+	})();
+</script><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.B-Vh4ymV.js"></script></div><div class="sl-hidden md:sl-flex print:hidden right-group astro-nczgtkxc"><div class="sl-flex social-icons astro-nczgtkxc"><a href="https://github.com/hujinnvshi/oghub" rel="me" class="sl-flex astro-cg55etiy"><span class="sr-only astro-cg55etiy">GitHub</span><svg aria-hidden="true" class="astro-cg55etiy astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a><a href="/rss.xml" rel="me" class="sl-flex astro-cg55etiy"><span class="sr-only astro-cg55etiy">RSS</span><svg aria-hidden="true" class="astro-cg55etiy astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M2.88 16.88a3 3 0 0 0 0 4.24 3 3 0 0 0 4.24 0 3 3 0 0 0-4.24-4.24Zm2.83 2.83a1 1 0 0 1-1.42-1.42 1 1 0 0 1 1.42 0 1 1 0 0 1 0 1.42ZM5 12a1 1 0 0 0 0 2 5 5 0 0 1 5 5 1 1 0 0 0 2 0 7 7 0 0 0-7-7Zm0-4a1 1 0 0 0 0 2 9 9 0 0 1 9 9 1 1 0 0 0 2 0 11.08 11.08 0 0 0-3.22-7.78A11.08 11.08 0 0 0 5 8Zm10.61.39A15.11 15.11 0 0 0 5 4a1 1 0 0 0 0 2 13 13 0 0 1 13 13 1 1 0 0 0 2 0 15.11 15.11 0 0 0-4.39-10.61Z"/></svg></a></div><starlight-theme-select><label style="--sl-select-width: 6.25em" class="astro-r2p65idu"><span class="sr-only astro-r2p65idu">Select theme</span><svg aria-hidden="true" class="icon label-icon astro-r2p65idu astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg><select autocomplete="off" class="astro-r2p65idu"><option value="dark" class="astro-r2p65idu">Dark</option><option value="light" class="astro-r2p65idu">Light</option><option value="auto" selected class="astro-r2p65idu">Auto</option></select><svg aria-hidden="true" class="icon caret astro-r2p65idu astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg></label></starlight-theme-select><script>
+	StarlightThemeProvider.updatePickers();
+</script><script type="module">var e=`starlight-theme`,t=e=>e===`auto`||e===`dark`||e===`light`?e:`auto`,n=()=>t(typeof localStorage<`u`&&localStorage.getItem(e));function r(t){typeof localStorage<`u`&&localStorage.setItem(e,t===`light`||t===`dark`?t:``)}var i=()=>matchMedia(`(prefers-color-scheme: light)`).matches?`light`:`dark`;function a(e){StarlightThemeProvider.updatePickers(e),document.documentElement.dataset.theme=e===`auto`?i():e,r(e)}matchMedia(`(prefers-color-scheme: light)`).addEventListener(`change`,()=>{n()===`auto`&&a(`auto`)});var o=class extends HTMLElement{constructor(){super(),a(n()),this.querySelector(`select`)?.addEventListener(`change`,e=>{e.currentTarget instanceof HTMLSelectElement&&a(t(e.currentTarget.value))})}};customElements.define(`starlight-theme-select`,o);</script><script type="module">var e=class extends HTMLElement{constructor(){super();let e=this.querySelector(`select`);e&&(e.addEventListener(`change`,e=>{e.currentTarget instanceof HTMLSelectElement&&(window.location.pathname=e.currentTarget.value)}),window.addEventListener(`pageshow`,t=>{if(!t.persisted)return;let n=e.querySelector(`option[selected]`)?.index;n!==e.selectedIndex&&(e.selectedIndex=n??0)}))}};customElements.define(`starlight-lang-select`,e);</script></div></div></header><nav class="sidebar print:hidden astro-gqpr5s5a" aria-label="Main"><starlight-menu-button class="print:hidden astro-vvx7mffu"><button aria-expanded="false" aria-label="Menu" aria-controls="starlight__sidebar" class="sl-flex md:sl-hidden astro-vvx7mffu"><svg aria-hidden="true" class="open-menu astro-vvx7mffu astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M3 8h18a1 1 0 1 0 0-2H3a1 1 0 0 0 0 2Zm18 8H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Zm0-5H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Z"/></svg><svg aria-hidden="true" class="close-menu astro-vvx7mffu astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="m13.41 12 6.3-6.29a1.004 1.004 0 1 0-1.42-1.42L12 10.59l-6.29-6.3a1.004 1.004 0 0 0-1.42 1.42l6.3 6.29-6.3 6.29a1 1 0 0 0 0 1.42.998.998 0 0 0 1.42 0l6.29-6.3 6.29 6.3a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.42L13.41 12Z"/></svg></button></starlight-menu-button><script type="module">var e=class extends HTMLElement{btn=this.querySelector(`button`);constructor(){super(),this.btn.addEventListener(`click`,()=>this.toggleExpanded());let e=this.closest(`nav`);e&&e.addEventListener(`keyup`,e=>this.closeOnEscape(e)),matchMedia(`(min-width: 50em)`).addEventListener(`change`,()=>this.setExpanded(!1))}setExpanded(e){this.setAttribute(`aria-expanded`,String(e)),document.body.toggleAttribute(`data-mobile-menu-expanded`,e),document.querySelectorAll(`.main-frame, .sl-skip-link`).forEach(t=>{t.toggleAttribute(`inert`,e)})}toggleExpanded(){this.setExpanded(this.getAttribute(`aria-expanded`)!==`true`)}closeOnEscape(e){e.code===`Escape`&&(this.setExpanded(!1),this.btn.focus())}};customElements.define(`starlight-menu-button`,e);</script><div id="starlight__sidebar" class="sidebar-pane astro-gqpr5s5a"><div class="sidebar-content sl-flex astro-gqpr5s5a"><sl-sidebar-state-persist data-hash="0ueeuwx" class="astro-f5yvicm7"><script aria-hidden="true">
+		(() => {
+			try {
+				if (!matchMedia('(min-width: 50em)').matches) return;
+				/** @type {HTMLElement | null} */
+				const target = document.querySelector('sl-sidebar-state-persist');
+				const state = JSON.parse(sessionStorage.getItem('sl-sidebar-state') || '0');
+				if (!target || !state || target.dataset.hash !== state.hash) return;
+				window._starlightScrollRestore = state.scroll;
+				customElements.define(
+					'sl-sidebar-restore',
+					class SidebarRestore extends HTMLElement {
+						connectedCallback() {
+							try {
+								const idx = parseInt(this.dataset.index || '');
+								const details = this.closest('details');
+								if (details && typeof state.open[idx] === 'boolean') details.open = state.open[idx];
+							} catch {}
+						}
+					}
+				);
+			} catch {}
+		})();
+	</script><ul class="top-level astro-ojxuodky"><li class="astro-ojxuodky"><details open class="astro-ojxuodky"><summary class="astro-ojxuodky"><span class="group-label astro-ojxuodky"><span class="large astro-ojxuodky">📰 新闻动态</span></span><svg aria-hidden="true" class="caret astro-ojxuodky astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="0"></sl-sidebar-restore><ul class="astro-ojxuodky"><li class="astro-ojxuodky"><a href="/news/site-launched/" class="astro-ojxuodky"><span class="astro-ojxuodky">OpenGood 站点上线</span></a></li></ul></details></li><li class="astro-ojxuodky"><details open class="astro-ojxuodky"><summary class="astro-ojxuodky"><span class="group-label astro-ojxuodky"><span class="large astro-ojxuodky">🛠️ 技术方案</span></span><svg aria-hidden="true" class="caret astro-ojxuodky astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="1"></sl-sidebar-restore><ul class="astro-ojxuodky"><li class="astro-ojxuodky"><a href="/tech/ascend-910-dual-die-interconnect-test/" class="astro-ojxuodky"><span class="astro-ojxuodky">Atlas 800T A3 双 die 互联带宽测试：方法与 SIO 实测</span></a></li><li class="astro-ojxuodky"><a href="/tech/ascend-910b-measured-vs-official-specs/" class="astro-ojxuodky"><span class="astro-ojxuodky">昇腾 910B 实测算力/HBM/互联 vs 官方标称：口径与匹配度</span></a></li><li class="astro-ojxuodky"><a href="/tech/ascend-npu-kv-cache-monitoring/" class="astro-ojxuodky"><span class="astro-ojxuodky">昇腾 NPU 上 KV-cache 的监控方法与实测：以 MiniCPM-o 4.5 实跑为例</span></a></li><li class="astro-ojxuodky"><a href="/tech/ascend-npu-msprof-roofline/" aria-current="page" class="astro-ojxuodky"><span class="astro-ojxuodky">用 msprof 剖析昇腾 910 的 matmul 与 transformer：算子链、AICore 占空比与 Roofline</span></a></li><li class="astro-ojxuodky"><a href="/tech/ascend-npu-numa-affinity-experiment/" class="astro-ojxuodky"><span class="astro-ojxuodky">昇腾 910 NPU 的 NUMA 亲和性实验：host↔NPU 传输的错位惩罚实测</span></a></li><li class="astro-ojxuodky"><a href="/tech/atlas-800t-a3-env-check-and-npu-bench/" class="astro-ojxuodky"><span class="astro-ojxuodky">Atlas 800T A3 推理设备核查与 NPU 基准实测</span></a></li><li class="astro-ojxuodky"><a href="/tech/build-personal-site/" class="astro-ojxuodky"><span class="astro-ojxuodky">从零搭建 Astro + Starlight 个人站点（GitHub Pages + 自定义域名）</span></a></li><li class="astro-ojxuodky"><a href="/tech/constellation-background/" class="astro-ojxuodky"><span class="astro-ojxuodky">给首页加粒子连线背景动效（Constellation）</span></a></li><li class="astro-ojxuodky"><a href="/tech/minicpm-ascend-challenge-knowledge-map/" class="astro-ojxuodky"><span class="astro-ojxuodky">MiniCPM 昇腾挑战赛系统知识全景——从基础概念到优化天花板</span></a></li><li class="astro-ojxuodky"><a href="/tech/minicpm-o-45-昇腾-910c-部署上手指南/" class="astro-ojxuodky"><span class="astro-ojxuodky">MiniCPM-o 4.5 昇腾 910C 部署上手指南</span></a></li><li class="astro-ojxuodky"><a href="/tech/minicpm-omni-910b-perf-test-recap/" class="astro-ojxuodky"><span class="astro-ojxuodky">MiniCPM-o 4.5 昇腾 910B 推理优化：双工 RTF 与三项 Benchmark 测试复盘</span></a></li><li class="astro-ojxuodky"><a href="/tech/minicpm-omni-optimization-methodology/" class="astro-ojxuodky"><span class="astro-ojxuodky">把 RTF 从 1.087 压到 0.68：一次推理性能优化的全过程、层次与方法</span></a></li><li class="astro-ojxuodky"><a href="/tech/minicpm-昇腾挑战赛--高性能推理优化赛道--评测规范说明/" class="astro-ojxuodky"><span class="astro-ojxuodky">MiniCPM 昇腾挑战赛 · 高性能推理优化赛道 — 评测规范说明</span></a></li><li class="astro-ojxuodky"><a href="/tech/rss-and-categories/" class="astro-ojxuodky"><span class="astro-ojxuodky">给 OpenGood 加上「内容分类」与「RSS 订阅」</span></a></li><li class="astro-ojxuodky"><a href="/tech/sidebar-emoji-border/" class="astro-ojxuodky"><span class="astro-ojxuodky">侧边栏分组加 emoji 图标 + 虚线框微调</span></a></li><li class="astro-ojxuodky"><a href="/tech/sidebar-tech-border/" class="astro-ojxuodky"><span class="astro-ojxuodky">给侧边栏某个分组的文章标题加自定义边框</span></a></li><li class="astro-ojxuodky"><a href="/tech/四卡-4090d-推理服务器部署规划与压测实战/" class="astro-ojxuodky"><span class="astro-ojxuodky">四卡 RTX 4090 D 推理服务器：模型部署规划、调试方法论与压测实战</span></a></li><li class="astro-ojxuodky"><a href="/tech/在昇腾-npu-上使用-vllm-omni部署-minicpm-o-45/" class="astro-ojxuodky"><span class="astro-ojxuodky">在昇腾 NPU 上使用 vllm-omni部署 MiniCPM-o 4.5</span></a></li><li class="astro-ojxuodky"><a href="/tech/面壁大赛群-qa-整理/" class="astro-ojxuodky"><span class="astro-ojxuodky">面壁大赛群 QA 整理</span></a></li></ul></details></li><li class="astro-ojxuodky"><details open class="astro-ojxuodky"><summary class="astro-ojxuodky"><span class="group-label astro-ojxuodky"><span class="large astro-ojxuodky">🚀 项目</span></span><svg aria-hidden="true" class="caret astro-ojxuodky astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></summary><sl-sidebar-restore data-index="2"></sl-sidebar-restore><ul class="astro-ojxuodky"><li class="astro-ojxuodky"><a href="/projects/learn-ascendc-operator/" class="astro-ojxuodky"><span class="astro-ojxuodky">learn-ascendc-operator</span></a></li></ul></details></li><li class="astro-ojxuodky"><a href="/about/" class="large astro-ojxuodky"><span class="astro-ojxuodky">👋 关于我</span></a></li></ul><script aria-hidden="true">
+		(() => {
+			const scroller = document.getElementById('starlight__sidebar');
+			if (!window._starlightScrollRestore || !scroller) return;
+			scroller.scrollTop = window._starlightScrollRestore;
+			delete window._starlightScrollRestore;
+		})();
+	</script></sl-sidebar-state-persist><div class="md:sl-hidden"><div class="mobile-preferences sl-flex astro-b5gddk54"><div class="social-icons astro-b5gddk54"><a href="https://github.com/hujinnvshi/oghub" rel="me" class="sl-flex astro-cg55etiy"><span class="sr-only astro-cg55etiy">GitHub</span><svg aria-hidden="true" class="astro-cg55etiy astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a><a href="/rss.xml" rel="me" class="sl-flex astro-cg55etiy"><span class="sr-only astro-cg55etiy">RSS</span><svg aria-hidden="true" class="astro-cg55etiy astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M2.88 16.88a3 3 0 0 0 0 4.24 3 3 0 0 0 4.24 0 3 3 0 0 0-4.24-4.24Zm2.83 2.83a1 1 0 0 1-1.42-1.42 1 1 0 0 1 1.42 0 1 1 0 0 1 0 1.42ZM5 12a1 1 0 0 0 0 2 5 5 0 0 1 5 5 1 1 0 0 0 2 0 7 7 0 0 0-7-7Zm0-4a1 1 0 0 0 0 2 9 9 0 0 1 9 9 1 1 0 0 0 2 0 11.08 11.08 0 0 0-3.22-7.78A11.08 11.08 0 0 0 5 8Zm10.61.39A15.11 15.11 0 0 0 5 4a1 1 0 0 0 0 2 13 13 0 0 1 13 13 1 1 0 0 0 2 0 15.11 15.11 0 0 0-4.39-10.61Z"/></svg></a></div><starlight-theme-select><label style="--sl-select-width: 6.25em" class="astro-r2p65idu"><span class="sr-only astro-r2p65idu">Select theme</span><svg aria-hidden="true" class="icon label-icon astro-r2p65idu astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg><select autocomplete="off" class="astro-r2p65idu"><option value="dark" class="astro-r2p65idu">Dark</option><option value="light" class="astro-r2p65idu">Light</option><option value="auto" selected class="astro-r2p65idu">Auto</option></select><svg aria-hidden="true" class="icon caret astro-r2p65idu astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg></label></starlight-theme-select><script>
+	StarlightThemeProvider.updatePickers();
+</script></div></div></div></div></nav><div class="main-frame astro-gqpr5s5a"><script type="module">var e=document.getElementById(`starlight__sidebar`),t=e?.querySelector(`sl-sidebar-state-persist`),n=`sl-sidebar-state`,r=()=>{let r=[],i=t?.dataset.hash||``;try{let e=sessionStorage.getItem(n),t=JSON.parse(e||`{}`);Array.isArray(t.open)&&t.hash===i&&(r=t.open)}catch{}return{hash:i,open:r,scroll:e?.scrollTop||0}},i=e=>{try{sessionStorage.setItem(n,JSON.stringify(e))}catch{}},a=()=>i(r()),o=(e,t)=>{let n=r();n.open[t]=e,i(n)};t?.addEventListener(`click`,e=>{if(!(e.target instanceof Element))return;let t=e.target.closest(`summary`)?.closest(`details`);if(!t)return;let n=t.querySelector(`sl-sidebar-restore`),r=parseInt(n?.dataset.index||``);isNaN(r)||o(!t.open,r)}),addEventListener(`visibilitychange`,()=>{document.visibilityState===`hidden`&&a()});</script><div class="lg:sl-flex astro-abfeecmu"><aside class="right-sidebar-container print:hidden astro-abfeecmu"><div class="right-sidebar astro-abfeecmu"><div class="lg:sl-hidden astro-q5mffni3"><mobile-starlight-toc data-min-h="2" data-max-h="3" class="astro-5ulgm6bh"><nav aria-labelledby="starlight__on-this-page--mobile" class="astro-5ulgm6bh"><details id="starlight__mobile-toc" class="astro-5ulgm6bh"><summary id="starlight__on-this-page--mobile" class="sl-flex astro-5ulgm6bh"><span class="toggle sl-flex astro-5ulgm6bh">On this page<svg aria-hidden="true" class="caret astro-5ulgm6bh astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></span><span class="display-current astro-5ulgm6bh"></span></summary><div class="dropdown astro-5ulgm6bh"><ul class="isMobile astro-cxyftcne" style="--depth: 0;"><li style="--depth: 0;" class="astro-cxyftcne"><a href="#_top" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">Overview</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#一两条剖析工具链" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">一、两条剖析工具链</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#二matmul-剖析torch-op--aclnn--aicore-全链" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">二、matmul 剖析:torch op → aclnn → AICore 全链</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#三transformer-前向分解12-层-llamabf164512" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">三、transformer 前向分解(12 层 Llama,bf16,4×512)</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#四roofline谁卡在算力谁卡在带宽" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">四、Roofline:谁卡在算力、谁卡在带宽</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#五结论" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">五、结论</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#六复现" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">六、复现</span></a></li></ul></div></details></nav></mobile-starlight-toc><script type="module" src="/_astro/MobileTableOfContents.astro_astro_type_script_index_0_lang.BcSo_yiZ.js"></script></div><div class="right-sidebar-panel sl-hidden lg:sl-block astro-q5mffni3"><div class="sl-container astro-q5mffni3"><starlight-toc data-min-h="2" data-max-h="3"><nav aria-labelledby="starlight__on-this-page"><h2 id="starlight__on-this-page">On this page</h2><ul class="astro-cxyftcne" style="--depth: 0;"><li style="--depth: 0;" class="astro-cxyftcne"><a href="#_top" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">Overview</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#一两条剖析工具链" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">一、两条剖析工具链</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#二matmul-剖析torch-op--aclnn--aicore-全链" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">二、matmul 剖析:torch op → aclnn → AICore 全链</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#三transformer-前向分解12-层-llamabf164512" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">三、transformer 前向分解(12 层 Llama,bf16,4×512)</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#四roofline谁卡在算力谁卡在带宽" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">四、Roofline:谁卡在算力、谁卡在带宽</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#五结论" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">五、结论</span></a></li><li style="--depth: 0;" class="astro-cxyftcne"><a href="#六复现" style="--depth: 0;" class="astro-cxyftcne"><span style="--depth: 0;" class="astro-cxyftcne">六、复现</span></a></li></ul></nav></starlight-toc><script type="module" src="/_astro/TableOfContents.astro_astro_type_script_index_0_lang.Csloo1VZ.js"></script></div></div></div></aside><div class="main-pane astro-abfeecmu"><main data-pagefind-body class="astro-vdxcvpsm" lang="en" dir="ltr"><div class="content-panel astro-oil7k7jf"><div class="sl-container astro-oil7k7jf"><h1 id="_top" class="astro-2sm4b3ln">用 msprof 剖析昇腾 910 的 matmul 与 transformer：算子链、AICore 占空比与 Roofline</h1></div></div><div class="content-panel astro-oil7k7jf"><div class="sl-container astro-oil7k7jf"><div class="sl-markdown-content"><p>前面测了这台 Atlas 800T A3 的算力/带宽(见<a href="./atlas-800t-a3-env-check-and-npu-bench">核查与基准</a>)。但“293 TFLOPS”只是个结果数——<strong>这些算力到底是怎么花掉的、卡在算力还是带宽上、每个 torch 算子映射到 NPU 哪个内核</strong>,得用 profiler 拆开看。这篇用 msprof 把 matmul 和一个 transformer 前向剖析到内核级,并画出 910 的 Roofline。</p>
+<p>运行环境:<strong>Atlas 800T A3 · Ascend910_9382 die0 · CANN 9.1.0-beta.1 · torch 2.12 + torch_npu 2.12</strong>。</p>
+<hr>
+<div class="sl-heading-wrapper level-h2"><h2 id="一两条剖析工具链">一、两条剖析工具链</h2><a class="sl-anchor-link" href="#一两条剖析工具链"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “一、两条剖析工具链”</span></a></div>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>用法</th>
+<th>产物</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>CLI <code dir="auto">msprof</code></strong></td>
+<td><code dir="auto">msprof --output=prof --application="python target.py" --ai-core=on --aic-metrics=Memory --duration=120</code></td>
+<td><code dir="auto">op_summary_*.csv</code>(每算子 aicore_time、cycles、各级带宽)</td>
+</tr>
+<tr>
+<td><strong>Python <code dir="auto">torch_npu.profiler</code></strong></td>
+<td><code dir="auto">profile(activities=[CPU,NPU], schedule=..., on_trace_ready=...)</code></td>
+<td><code dir="auto">kernel_details.csv</code>、<code dir="auto">operator_details.csv</code>、<code dir="auto">trace_view.json</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>坑① <code dir="auto">torch_npu.npu.profile</code> 不存在,正确是 <code dir="auto">torch_npu.profiler.profile</code>;<code dir="auto">tensorboard_trace_handler</code>(无下划线)。
+坑② CLI msprof 的 <code dir="auto">--storage-limit</code> 取值有范围限制(误传 500 报错),去掉它靠 <code dir="auto">--duration</code> 控量。
+坑③ <code dir="auto">--application</code> 启动的 app 含 torch_npu import(~90s),<code dir="auto">--duration</code> 要给足(我用 120s)才采到稳态。</p>
+</blockquote>
+<div class="sl-heading-wrapper level-h2"><h2 id="二matmul-剖析torch-op--aclnn--aicore-全链">二、matmul 剖析:torch op → aclnn → AICore 全链</h2><a class="sl-anchor-link" href="#二matmul-剖析torch-op--aclnn--aicore-全链"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “二、matmul 剖析:torch op → aclnn → AICore 全链”</span></a></div>
+<p>Python profiler 的 <code dir="auto">operator_details.csv</code> 直接给出链路:</p>
+<div class="expressive-code"><link rel="stylesheet" href="/_astro/ec.w36nc.css"><script type="module" src="/_astro/ec.0vx5m.js"></script><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">aten::matmul  →  aclnnMatmul  →  内核 aclnnMatmul_MatMulV3Common_MatMulV3</span></div></div><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">(Device Total Duration 3725 us)</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="aten::matmul  →  aclnnMatmul  →  内核 aclnnMatmul_MatMulV3Common_MatMulV3(Device Total Duration 3725 us)"><div></div></button></div></figure></div>
+<p>CLI msprof 的 <code dir="auto">op_summary.csv</code> 给出该内核的硬件指标(30955 次采样):</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>实测</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>执行单元 / Block Num</td>
+<td><strong>AI_CORE / 24</strong></td>
+<td>24 个 cube 核全用上(= 设备参数)</td>
+</tr>
+<tr>
+<td>aicore_time(中位)</td>
+<td><strong>3685.8 us</strong></td>
+<td>单次 matmul 内核耗时</td>
+</tr>
+<tr>
+<td>折算算力</td>
+<td><strong>298.3 TFLOPS</strong></td>
+<td>≈ 实测峰值 293 的 <strong>~100%</strong></td>
+</tr>
+<tr>
+<td>HBM r+w 带宽</td>
+<td><strong>2.1 GB/s</strong></td>
+<td>仅峰值 1.27 TB/s 的 <strong>0.2%</strong></td>
+</tr>
+</tbody>
+</table>
+<p>→ <strong>matmul 在 910 上把 cube 算力几乎打满,但几乎不读 HBM</strong>(数据在 L1/L2 里复用)。这是教科书级的<strong>计算受限 GEMM</strong>:优化它只能靠提算力或改算法,省带宽没用。</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="三transformer-前向分解12-层-llamabf164512">三、transformer 前向分解(12 层 Llama,bf16,4×512)</h2><a class="sl-anchor-link" href="#三transformer-前向分解12-层-llamabf164512"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “三、transformer 前向分解(12 层 Llama,bf16,4×512)”</span></a></div>
+<p>把一个 transformer forward 的 NPU kernel 按耗时聚合(总 40.14 ms):</p>
+<table>
+<thead>
+<tr>
+<th>aclnn 内核</th>
+<th>占比</th>
+<th>对应</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>aclnnMatmul</strong></td>
+<td><strong>34.6%</strong></td>
+<td>QKV/O 投影、MLP up/down</td>
+</tr>
+<tr>
+<td>aclnnMul</td>
+<td>13.9%</td>
+<td>elementwise(RoPE 旋转 / attention scale)</td>
+</tr>
+<tr>
+<td><strong>aclnnFlashAttentionScore</strong></td>
+<td><strong>7.0%</strong></td>
+<td>注意力(SDPA 的融合 flash-attn 内核)</td>
+</tr>
+<tr>
+<td>aclnnNeg/Cat(Transpose)</td>
+<td>4.7/4.2%</td>
+<td>数据重排</td>
+</tr>
+<tr>
+<td>aclnnAdd / Cast / Mean / Pow / Silu / Triu / Slice</td>
+<td>其余</td>
+<td>残差、cast、rmsnorm、激活、causal mask</td>
+</tr>
+</tbody>
+</table>
+<p><strong>三点观察</strong>:</p>
+<ol>
+<li><strong>matmul 占 1/3</strong>——transformer 的时间主要花在线性层,优化重点在 GEMM 算力。</li>
+<li><strong>elementwise(Mul/Add/Cast 等)加起来 ~30%</strong>——这些是 launch 开销敏感的小算子,放大 batch / 算子融合能省。</li>
+<li><code dir="auto">scaled_dot_product_attention</code> 映射到 <strong><code dir="auto">aclnnFlashAttentionScore</code>(融合 flash-attn)</strong>。注意:这和 <a href="./ascend-npu-kv-cache-monitoring">KV-cache 监控</a>里 llama.cpp/ggml-cann 的 <code dir="auto">flash_attn 被强制关闭</code>不同——<strong>torch_npu 自带融合 flash-attn,ggml-cann 没有</strong>,两套后端算子覆盖差异很大。</li>
+</ol>
+<div class="sl-heading-wrapper level-h2"><h2 id="四roofline谁卡在算力谁卡在带宽">四、Roofline:谁卡在算力、谁卡在带宽</h2><a class="sl-anchor-link" href="#四roofline谁卡在算力谁卡在带宽"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “四、Roofline:谁卡在算力、谁卡在带宽”</span></a></div>
+<p>用 Track 1 的实测数据画 910 的 Roofline(峰值算力 293 TFLOPS fp16、峰值带宽 1.27 TB/s,拐点 AI≈231 FLOP/byte):</p>
+<table>
+<thead>
+<tr>
+<th>算子</th>
+<th>算术强度 AI(FLOP/byte)</th>
+<th>实测吞吐</th>
+<th>落点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>softmax</strong></td>
+<td>6.3</td>
+<td>~1.45 TB/s</td>
+<td><strong>带宽斜线</strong>(访存受限)</td>
+</tr>
+<tr>
+<td><strong>matmul</strong></td>
+<td>2731</td>
+<td>292 TFLOPS</td>
+<td><strong>算力天花板</strong>(打满)</td>
+</tr>
+<tr>
+<td>sdpa</td>
+<td>2554</td>
+<td>48 TFLOPS</td>
+<td>计算区但未达峰(内核效率)</td>
+</tr>
+<tr>
+<td>conv2d</td>
+<td>6695</td>
+<td>146 TFLOPS</td>
+<td>计算区但未达峰</td>
+</tr>
+</tbody>
+</table>
+<p>→ Roofline 把“为什么 matmul 是 292T 而 sdpa 只有 48T”解释清楚了:<strong>matmul 顶到了算力天花板,sdpa/conv2d 虽然也在计算区但内核效率不到峰值的 1/3</strong>——这是后续优化的空间(算子融合 / 更优 kernel),不是带宽问题。</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="五结论">五、结论</h2><a class="sl-anchor-link" href="#五结论"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “五、结论”</span></a></div>
+<ul>
+<li>✅ msprof 能完整还原 <strong>torch op → aclnn → AICore</strong> 链;matmul 用满 24 cube 核、~100% 算力、0.2% 带宽(纯计算受限)。</li>
+<li>✅ transformer 时间 <strong>34.6% 在 matmul、7% 在 flash-attn</strong>;优化重点是 GEMM 算力 + 算子融合。</li>
+<li>💡 <strong>torch_npu 有融合 flash-attn(aclnnFlashAttentionScore),ggml-cann 没有</strong>——同片硅、不同后端能力差很大,选推理引擎时要注意。</li>
+<li>💡 Roofline 定位瓶颈:matmul 已到顶,要再快得靠算法;sda/conv2d 还有 ~2-3x kernel 效率空间。</li>
+</ul>
+<div class="sl-heading-wrapper level-h2"><h2 id="六复现">六、复现</h2><a class="sl-anchor-link" href="#六复现"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “六、复现”</span></a></div>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">Terminal window</span></figcaption><pre data-language="bash"><code><div class="ec-line"><div class="code"><span style="--0:#C5E478;--1:#3B61B0">source</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">/usr/local/Ascend/ascend-toolkit/set_env.sh</span><span style="--0:#D6DEEB;--1:#403F53">; </span><span style="--0:#C792EA;--1:#8844AE">export</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#C5E478;--1:#3B61B0">ASCEND_RT_VISIBLE_DEVICES</span><span style="--0:#C792EA;--1:#8844AE">=</span><span style="--0:#F78C6C;--1:#AA0982">0</span></div></div><div class="ec-line"><div class="code"><span style="--0:#919F9F;--1:#5F636F"># CLI msprof:</span></div></div><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">msprof</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">--output=prof_matmul</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">--application=</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#C5E478;--1:#3B61B0">$PY</span><span style="--0:#ECC48D;--1:#984E4D"> target_matmul.py</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">--ai-core=on</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">--aic-metrics=Memory</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">--duration=120</span></div></div><div class="ec-line"><div class="code"><span style="--0:#919F9F;--1:#5F636F"># Python profiler:</span></div></div><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">python</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">target_matmul_prof.py</span><span style="--0:#D6DEEB;--1:#403F53">        </span><span style="--0:#919F9F;--1:#5F636F"># → kernel_details.csv / operator_details.csv / trace_view.json</span></div></div><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">python</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">roofline.py</span><span style="--0:#D6DEEB;--1:#403F53">                  </span><span style="--0:#919F9F;--1:#5F636F"># → roofline.svg(无 matplotlib 依赖)</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="source /usr/local/Ascend/ascend-toolkit/set_env.sh; export ASCEND_RT_VISIBLE_DEVICES=0msprof --output=prof_matmul --application=&quot;$PY target_matmul.py&quot; --ai-core=on --aic-metrics=Memory --duration=120python target_matmul_prof.py        # → kernel_details.csv / operator_details.csv / trace_view.jsonpython roofline.py                  # → roofline.svg(无 matplotlib 依赖)"><div></div></button></div></figure></div>
+</div><footer class="sl-flex astro-xhxjzfa7"><div class="meta sl-flex astro-xhxjzfa7"></div><div class="pagination-links print:hidden astro-jgq3vlii" dir="ltr"><a href="/tech/ascend-npu-kv-cache-monitoring/" rel="prev" class="astro-jgq3vlii"><svg aria-hidden="true" class="astro-jgq3vlii astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.5rem;"><path d="M17 11H9.41l3.3-3.29a1.004 1.004 0 1 0-1.42-1.42l-5 5a1 1 0 0 0-.21.33 1 1 0 0 0 0 .76 1 1 0 0 0 .21.33l5 5a1.002 1.002 0 0 0 1.639-.325 1 1 0 0 0-.219-1.095L9.41 13H17a1 1 0 0 0 0-2Z"/></svg><span class="astro-jgq3vlii">Previous<br class="astro-jgq3vlii"><span class="link-title astro-jgq3vlii">昇腾 NPU 上 KV-cache 的监控方法与实测：以 MiniCPM-o 4.5 实跑为例</span></span></a><a href="/tech/ascend-npu-numa-affinity-experiment/" rel="next" class="astro-jgq3vlii"><svg aria-hidden="true" class="astro-jgq3vlii astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.5rem;"><path d="M17.92 11.62a1.001 1.001 0 0 0-.21-.33l-5-5a1.003 1.003 0 1 0-1.42 1.42l3.3 3.29H7a1 1 0 0 0 0 2h7.59l-3.3 3.29a1.002 1.002 0 0 0 .325 1.639 1 1 0 0 0 1.095-.219l5-5a1 1 0 0 0 .21-.33 1 1 0 0 0 0-.76Z"/></svg><span class="astro-jgq3vlii">Next<br class="astro-jgq3vlii"><span class="link-title astro-jgq3vlii">昇腾 910 NPU 的 NUMA 亲和性实验：host↔NPU 传输的错位惩罚实测</span></span></a></div></footer></div></div></main></div></div></div></div></body></html>
