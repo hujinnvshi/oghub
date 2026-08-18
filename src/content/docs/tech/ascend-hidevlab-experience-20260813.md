@@ -1,3 +1,9 @@
+---
+title: 昇腾 910C + vLLM-Omni 比赛环境实操经验（踩坑与解法）
+description: HiDevLab 昇腾环境多日实测沉淀，面向 vLLM-Omni 子赛道参赛队伍，按主题分类可直接复用；所有建议均来自真实跑通/踩坑记录。
+pubDate: 2026-08-13
+---
+
 # 昇腾 910C + vLLM-Omni 比赛环境实操经验（踩坑与解法）
 
 > 面向：vLLM-Omni 子赛道参赛队伍，HiDevLab 昇腾环境。
